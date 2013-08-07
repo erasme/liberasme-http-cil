@@ -7,22 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHttpServer", "TestHttpS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHttpServer2", "TestHttpServer2\TestHttpServer2.csproj", "{7CCB3BB6-48AF-44F4-B667-5706D5370536}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHttpServer3", "TestHttpServer3\TestHttpServer3.csproj", "{DFD64570-4515-4BA3-85FC-5FCF2329D534}"
-EndProject
-Project("{2857B73E-F847-4B02-9238-064979017E93}") = "TestHttpServer4", "TestHttpServer4\TestHttpServer4.cproj", "{4C5FCE1B-9B8F-401E-9C49-681BE0F5D3C8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHttpServer5", "TestHttpServer5\TestHttpServer5.csproj", "{D6B28744-68FD-4C79-B0C6-952E6F621296}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4C5FCE1B-9B8F-401E-9C49-681BE0F5D3C8}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{4C5FCE1B-9B8F-401E-9C49-681BE0F5D3C8}.Debug|x86.Build.0 = Debug|Any CPU
-		{4C5FCE1B-9B8F-401E-9C49-681BE0F5D3C8}.Release|x86.ActiveCfg = Release|Any CPU
-		{4C5FCE1B-9B8F-401E-9C49-681BE0F5D3C8}.Release|x86.Build.0 = Release|Any CPU
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Debug|x86.ActiveCfg = Debug|x86
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Debug|x86.Build.0 = Debug|x86
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Release|x86.ActiveCfg = Release|x86
@@ -35,14 +25,6 @@ Global
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Debug|x86.Build.0 = Debug|x86
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Release|x86.ActiveCfg = Release|x86
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Release|x86.Build.0 = Release|x86
-		{D6B28744-68FD-4C79-B0C6-952E6F621296}.Debug|x86.ActiveCfg = Debug|x86
-		{D6B28744-68FD-4C79-B0C6-952E6F621296}.Debug|x86.Build.0 = Debug|x86
-		{D6B28744-68FD-4C79-B0C6-952E6F621296}.Release|x86.ActiveCfg = Release|x86
-		{D6B28744-68FD-4C79-B0C6-952E6F621296}.Release|x86.Build.0 = Release|x86
-		{DFD64570-4515-4BA3-85FC-5FCF2329D534}.Debug|x86.ActiveCfg = Debug|x86
-		{DFD64570-4515-4BA3-85FC-5FCF2329D534}.Debug|x86.Build.0 = Debug|x86
-		{DFD64570-4515-4BA3-85FC-5FCF2329D534}.Release|x86.ActiveCfg = Release|x86
-		{DFD64570-4515-4BA3-85FC-5FCF2329D534}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = TestHttpServer\TestHttpServer.csproj
