@@ -7,9 +7,9 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyTitle("TestHttpServer2")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Departement du Rhone - ERASME")]
 [assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("daniel")]
+[assembly: AssemblyCopyright("(c) 2013. Departement du Rhone")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
