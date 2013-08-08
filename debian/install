@@ -1,0 +1,2 @@
+Erasme.Http/bin/Release/*.pc /usr/lib/pkgconfig
+Erasme.Http/bin/Release/*.dll /usr/lib/cli/erasme-http-1.0/

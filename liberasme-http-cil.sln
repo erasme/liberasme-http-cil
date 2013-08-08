@@ -7,24 +7,38 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHttpServer", "TestHttpS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestHttpServer2", "TestHttpServer2\TestHttpServer2.csproj", "{7CCB3BB6-48AF-44F4-B667-5706D5370536}"
 EndProject
+Project("{9344BDBB-3E7F-41FC-A0DD-8665D75EE146}") = "debian", "debian\debian.mdproj", "{C0B10149-38C8-437F-847E-E42E80A44248}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x86 = Debug|x86
 		Release|x86 = Release|x86
+		Default|Any CPU = Default|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Debug|x86.ActiveCfg = Debug|x86
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Debug|x86.Build.0 = Debug|x86
+		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Default|Any CPU.ActiveCfg = Debug|x86
+		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Default|Any CPU.Build.0 = Debug|x86
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Release|x86.ActiveCfg = Release|x86
 		{54B8C20B-011C-4FF7-8009-1A428FDF05DA}.Release|x86.Build.0 = Release|x86
 		{7CCB3BB6-48AF-44F4-B667-5706D5370536}.Debug|x86.ActiveCfg = Debug|x86
 		{7CCB3BB6-48AF-44F4-B667-5706D5370536}.Debug|x86.Build.0 = Debug|x86
+		{7CCB3BB6-48AF-44F4-B667-5706D5370536}.Default|Any CPU.ActiveCfg = Debug|x86
+		{7CCB3BB6-48AF-44F4-B667-5706D5370536}.Default|Any CPU.Build.0 = Debug|x86
 		{7CCB3BB6-48AF-44F4-B667-5706D5370536}.Release|x86.ActiveCfg = Release|x86
 		{7CCB3BB6-48AF-44F4-B667-5706D5370536}.Release|x86.Build.0 = Release|x86
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Debug|x86.ActiveCfg = Debug|x86
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Debug|x86.Build.0 = Debug|x86
+		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Default|Any CPU.ActiveCfg = Debug|x86
+		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Default|Any CPU.Build.0 = Debug|x86
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Release|x86.ActiveCfg = Release|x86
 		{BEA98777-07AD-48E2-917C-5B34CE93362E}.Release|x86.Build.0 = Release|x86
+		{C0B10149-38C8-437F-847E-E42E80A44248}.Debug|x86.ActiveCfg = Default|Any CPU
+		{C0B10149-38C8-437F-847E-E42E80A44248}.Debug|x86.Build.0 = Default|Any CPU
+		{C0B10149-38C8-437F-847E-E42E80A44248}.Default|Any CPU.ActiveCfg = Default|Any CPU
+		{C0B10149-38C8-437F-847E-E42E80A44248}.Default|Any CPU.Build.0 = Default|Any CPU
+		{C0B10149-38C8-437F-847E-E42E80A44248}.Release|x86.ActiveCfg = Default|Any CPU
+		{C0B10149-38C8-437F-847E-E42E80A44248}.Release|x86.Build.0 = Default|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = TestHttpServer\TestHttpServer.csproj

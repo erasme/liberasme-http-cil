@@ -1,0 +1,10 @@
+Name: Erasme.Http
+Description: Erasme.Http
+Version: 1.0
+
+prefix=/usr
+assemblies_dir=${prefix}/lib/cli/erasme-http-1.0/
+Libraries=${assemblies_dir}/Erasme.Http.dll
+
+Requires: 
+Libs: -r:${assemblies_dir}/Erasme.Http.dll
