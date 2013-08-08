@@ -12,6 +12,7 @@
     <SignAssembly>true</SignAssembly>
     <ReleaseVersion>1.0</ReleaseVersion>
     <AssemblyOriginatorKeyFile>Erasme.Http.snk</AssemblyOriginatorKeyFile>
+    <newfilesearch>OnLoad</newfilesearch>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -26,6 +27,7 @@
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

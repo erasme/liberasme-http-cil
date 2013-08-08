@@ -1,2 +1,3 @@
 Erasme.Http/bin/Release/*.pc /usr/lib/pkgconfig
 Erasme.Http/bin/Release/*.dll /usr/lib/cli/erasme-http-1.0/
+Erasme.Http/bin/Release/*.dll.mdb /usr/lib/cli/erasme-http-1.0/
