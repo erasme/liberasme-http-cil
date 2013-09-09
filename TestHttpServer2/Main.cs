@@ -27,7 +27,11 @@
 //
 
 using System;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 using Erasme.Http;
 using Erasme.Json;
 
@@ -74,19 +78,44 @@ namespace TestHttpServer2
 		{
 			if(context.Request.Method == "POST") {
 				MultipartReader reader = context.Request.ReadAsMultipart();
+				StringBuilder sb = new StringBuilder();
 				while(true) {
 					MultipartPart part = await reader.ReadPartAsync();
 					if(part == null)
 						break;
+
+					string name = "unknown";
+					if(part.Headers.ContentDisposition.ContainsKey("name"))
+						name = part.Headers.ContentDisposition["name"];
+
+					MD5 md5 = MD5CryptoServiceProvider.Create();
+					md5.Initialize();
+
+					FileStream file = File.Create(name);
+				
 					byte[] buffer = new byte[4096];
-//					int size;
-					while((/*size =*/ await part.Stream.ReadAsync(buffer, 0, buffer.Length)) > 0) {
-//						Console.WriteLine("ReadAsync size: "+size);
+					int totalSize = 0;
+					int size;
+					while((size = await part.Stream.ReadAsync(buffer, 0, buffer.Length)) > 0) {
+						md5.TransformBlock(buffer, 0, size, buffer, 0);
+						await file.WriteAsync(buffer, 0, size);
+						totalSize += size;
 					}
+					md5.TransformFinalBlock(buffer, 0, 0);
+					file.Close();
+					string md5String = "";
+					foreach(byte b in md5.Hash) {
+						md5String += b.ToString("x2");
+					}
+					sb.Append("Part name: "+name+", size: "+totalSize+", MD5: "+md5String);
+					sb.Append("\n");
 				}
+
 				context.Response.StatusCode = 200;
 				double seconds = (DateTime.Now - context.Request.StartTime).TotalSeconds;
-				context.Response.Content = new StringContent("Done. Bytes: "+context.Request.ReadCounter+", Seconds: "+seconds+", "+Math.Round(context.Request.ReadCounter/(seconds*1000000))+" MB/s, "+Math.Round(context.Request.ReadCounter*8/(seconds*1000000))+" Mbits/s\n");
+				context.Response.Content = new StringContent(
+					"Done. Bytes: "+context.Request.ReadCounter+", Seconds: "+seconds+", "+Math.Round(context.Request.ReadCounter/(seconds*1000000))+" MB/s, "+Math.Round(context.Request.ReadCounter*8/(seconds*1000000))+" Mbits/s\n"+
+					sb.ToString());
 			}
 			else if(context.Request.Method == "GET") {
 				context.Response.StatusCode = 200;
