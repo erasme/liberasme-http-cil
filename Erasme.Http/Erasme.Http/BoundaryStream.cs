@@ -235,10 +235,12 @@ namespace Erasme.Http
 						else {
 							// partial boundary match
 							if(boundaryPos > 0) {
-								currentBuffer = null;
-								currentBufferCount = 0;
-								currentBufferOffset = 0;
-								break;
+								// return the part before the match
+								if(buffer != null)
+									Buffer.BlockCopy(currentBuffer, currentBufferOffset, buffer, offset, i);
+								currentBufferCount -= i + used;
+								currentBufferOffset += used;
+								return i;
 							}
 							// match fails continue search
 							else {
