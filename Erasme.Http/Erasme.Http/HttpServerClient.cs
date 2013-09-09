@@ -88,6 +88,8 @@ namespace Erasme.Http
 			remoteEndPoint = socket.RemoteEndPoint;
 			KeepAliveCountdown = 100;
 			KeepAliveTimeout = 10;
+			webSocket = null;
+			startTime = DateTime.Now;
 
 			bufferContext.Offset = 0;
 			bufferContext.Count = 0;
@@ -264,6 +266,8 @@ namespace Erasme.Http
 					}
 					Interlocked.Increment(ref requestCounter);
 				}
+			}
+			catch(SocketException) {
 			}
 			finally {
 				stream.Close();
