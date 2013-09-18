@@ -496,7 +496,7 @@ namespace Erasme.Http
 			case ".wmlc": retval = "application/vnd.wap.wmlc"; break;
 			case ".wmls": retval = "text/vnd.wap.wmlscript"; break;
 			case ".wmlsc": retval = "application/vnd.wap.wmlscriptc"; break;
-			case ".woff": retval = "application/x-font-woff"; break;
+			case ".woff": retval = "application/font-woff"; break;
 			case ".word": retval = "application/msword"; break;
 			case ".wp": retval = "application/wordperfect"; break;
 			case ".wp5": retval = "application/wordperfect"; break;

@@ -4,6 +4,10 @@ liberasme-http-cil (1.0.1) raring; urgency=low (NOT YET RELEASED)
   * Catch SocketException in HttpServerClient
   * Correct a bug in BoundaryStream which drop part of read buffers
     when cross buffer boundaries happens
+  * Correct a bug in HttpServerRequest.ReadAsString*. Infact, StreamReader
+    seems to be bugged when providing small buffer (like 1). Avoid the problem
+    using ReadAsBytes*
+  * Correct WOFF mimetype to application/font-woff
 
  -- Daniel Lacroix <dlacroix@erasme.org>  Wed,  7 Aug 2013 16:58:00 +0200
 

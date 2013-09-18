@@ -223,8 +223,7 @@ namespace Erasme.Http
 		/// </returns>
 		public string ReadAsString()
 		{
-			using(StreamReader reader = new StreamReader(InputStream, Encoding.UTF8))
-				return reader.ReadToEnd();
+			return Encoding.UTF8.GetString(ReadAsBytes());
 		}
 
 		/// <summary>
@@ -233,10 +232,9 @@ namespace Erasme.Http
 		/// <returns>
 		/// The string async.
 		/// </returns>
-		public Task<string> ReadAsStringAsync()
+		public async Task<string> ReadAsStringAsync()
 		{
-			using(StreamReader reader = new StreamReader(InputStream, Encoding.UTF8))
-				return reader.ReadToEndAsync();
+			return Encoding.UTF8.GetString(await ReadAsBytesAsync());
 		}
 
 		/// <summary>
