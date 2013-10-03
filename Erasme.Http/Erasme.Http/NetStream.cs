@@ -175,9 +175,15 @@ namespace Erasme.Http
 
 		public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
-			int size = socket.Send(buffer, offset, count, SocketFlags.None);
+			SocketError error;
+
+			int size = socket.Send(buffer, offset, count, SocketFlags.None, out error);
 			Interlocked.Add(ref writeCounter, size);
-			if(size < count) {
+			// create SocketException if needed
+			if((error != SocketError.WouldBlock) && (error != SocketError.Success))
+				throw new SocketException((int)error);
+
+			if((error == SocketError.WouldBlock) || (size < count)) {
 				TaskCompletionSource<object> source = new TaskCompletionSource<object>(); 
 				writeEventArgs.SetBuffer(buffer, offset+size, count-size);
 				writeEventArgs.UserToken = source;

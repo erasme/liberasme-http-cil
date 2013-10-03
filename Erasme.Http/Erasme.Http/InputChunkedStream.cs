@@ -41,7 +41,7 @@ namespace Erasme.Http
 		int chunkPos;
 		bool end = false;
 		bool firstChunk  = true;
-		StringBuilder sb = new StringBuilder(128);
+		MemoryStream stringBuffer = new MemoryStream(128);
 
 		BufferContext bufferContext;
 
@@ -109,15 +109,15 @@ namespace Erasme.Http
 				}
 				// load a new chunk
 				else {
-					sb.Clear();
-					Task<string> task = HttpUtility.ReadLineAsync(bufferContext, sb);
+					stringBuffer.SetLength(0);
+					Task<string> task = HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 					task.Wait();
 					string chunkLine = task.Result;
 					if(!firstChunk) {
 						if(chunkLine != String.Empty)
 							throw new Exception("Invalid chunked Stream");
-						sb.Clear();
-						task = HttpUtility.ReadLineAsync(bufferContext, sb);
+						stringBuffer.SetLength(0);
+						task = HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 						task.Wait();
 						chunkLine = task.Result;
 					}
@@ -165,13 +165,13 @@ namespace Erasme.Http
 				}
 				// load a new chunk
 				else {
-					sb.Clear();
-					string chunkLine = await HttpUtility.ReadLineAsync(bufferContext, sb);
+					stringBuffer.SetLength(0);
+					string chunkLine = await HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 					if(!firstChunk) {
 						if(chunkLine != String.Empty)
 							throw new Exception("Invalid chunked Stream");
-						sb.Clear();
-						chunkLine = await HttpUtility.ReadLineAsync(bufferContext, sb);
+						stringBuffer.SetLength(0);
+						chunkLine = await HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 					}
 					else
 						firstChunk = false;
@@ -209,13 +209,13 @@ namespace Erasme.Http
 				}
 				// load a new chunk
 				else {
-					sb.Clear();
-					string chunkLine = await HttpUtility.ReadLineAsync(bufferContext, sb);
+					stringBuffer.SetLength(0);
+					string chunkLine = await HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 					if(!firstChunk) {
 						if(chunkLine != String.Empty)
 							throw new Exception("Invalid chunked Stream");
-						sb.Clear();
-						chunkLine = await HttpUtility.ReadLineAsync(bufferContext, sb);
+						stringBuffer.SetLength(0);
+						chunkLine = await HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 					}
 					else
 						firstChunk = false;

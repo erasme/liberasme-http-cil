@@ -57,6 +57,7 @@ namespace Erasme.Http
 			// set a default server name
 			name = (Assembly.GetEntryAssembly().GetName().Name)+" (v"+Assembly.GetEntryAssembly().GetName().Version+")";
 			StopOnException = false;
+			AllowGZip = true;
 		}
 
 		public string ServerName {
@@ -66,6 +67,23 @@ namespace Erasme.Http
 			set {
 				name = value;
 			}
+		}
+
+		/// <summary>
+		/// Gets or sets a value indicating whether this HTTP server allow GZip
+		/// compression if the HTTP client support it
+		/// </summary>
+		/// <value><c>true</c> if allow GZip; otherwise, <c>false</c>.</value>
+		public bool AllowGZip { get; set; }
+
+		public Task RunAsync(bool disposeHandlers = false)
+		{
+			return null;
+		}
+
+		public void Run(bool disposeHandlers = false)
+		{
+			RunAsync(disposeHandlers).Wait();
 		}
 
 		public void Start()

@@ -75,6 +75,9 @@ namespace Erasme.Http
 					// only support HTTP ranges with StreamContent
 					context.Response.Content is StreamContent;
 
+				bool hasBytesRanges = context.Request.Headers.ContainsKey("range") &&
+					context.Request.Headers["range"].ToLower().StartsWith("bytes=");
+
 				// finish the headers
 				if(!context.Response.Headers.ContainsKey("server"))
 					context.Response.Headers["server"] = context.Client.Server.ServerName;
@@ -97,10 +100,12 @@ namespace Erasme.Http
 					               contentType.StartsWith("application/json") ||
 					               contentType.StartsWith("image/svg+xml"));
 				}
+				// test if the server allow it
+				supportGzip &= context.Client.Server.AllowGZip;
 				// check if the HTTP client support GZip
 				supportGzip &= context.Request.Headers.ContainsKey("accept-encoding") && context.Request.Headers["accept-encoding"].Contains("gzip");
 				// HTTP ranges not compatible with GZip, priority to ranges
-				supportGzip &= !supportRanges;
+				supportGzip &= !hasBytesRanges;
 
 				long contentLength;
 				Stream gzippedStream = null;
@@ -144,8 +149,7 @@ namespace Erasme.Http
 				if(supportRanges) {
 					context.Response.Headers["accept-ranges"] = "bytes";
 
-					if(context.Request.Headers.ContainsKey("range") &&
-					   context.Request.Headers["range"].ToLower().StartsWith("bytes=")) {
+					if(hasBytesRanges) {
 						long total;
 						ranges = ParseHttpRanges(context.Request.Headers["range"], contentLength, out total);
 						// only support one range
@@ -186,8 +190,10 @@ namespace Erasme.Http
 				// send the content
 				if(contentLength != -1) {
 					Stream stream = context.Client.Stream;
-					if(supportGzip)
+					if(supportGzip) {
 						await gzippedStream.CopyToAsync(context.Client.Stream);
+						gzippedStream.Close();
+					}
 					else if(ranges != null) {
 						StreamContent streamContent = context.Response.Content as StreamContent;
 						byte[] copyBuffer = new byte[4096];
@@ -208,13 +214,14 @@ namespace Erasme.Http
 						if(supportGzip) {
 							using(GZipStream gzipStream = new GZipStream(chunkedStream, CompressionMode.Compress, true)) {
 								await context.Response.Content.CopyToAsync(gzipStream);
+								gzipStream.Close();
 							}
 						}
 						else {
 							await context.Response.Content.CopyToAsync(chunkedStream);
 						}
-						// finish with a zero length chunk
-						await chunkedStream.WriteAsync(null, 0, 0);
+						// close the chunked stream
+						await chunkedStream.CloseAsync();
 					}
 				}
 				context.Response.Sent = true;

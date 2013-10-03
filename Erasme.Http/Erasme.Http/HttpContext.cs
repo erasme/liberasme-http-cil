@@ -98,6 +98,16 @@ namespace Erasme.Http
 		{
 			return handler.ProcessWebSocketRequestAsync(this);
 		}
+
+		public Task SendResponseAsync()
+		{
+			return HttpSendResponse.SendAsync(this);
+		}
+
+		public void SendResponse()
+		{
+			HttpSendResponse.SendAsync(this).Wait();
+		}
 	}
 }
 

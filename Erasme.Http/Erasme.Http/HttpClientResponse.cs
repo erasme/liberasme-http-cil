@@ -37,25 +37,23 @@ namespace Erasme.Http
 {
 	public class HttpClientResponse
 	{
-		public HttpClientResponse(string status, Dictionary<string,string> headers, Stream stream)
+		public HttpClientResponse(string status, HttpHeaders headers, BufferContext bufferContext)
 		{
 			HttpUtility.ParseStatus(status, out protocol, out statusCode, out statusDescription);
-			Headers = new HttpHeaders(headers);
+			Headers = headers;
 			if(Headers.ContainsKey("cookie"))
 				Cookies = HttpUtility.ParseCookie(Headers["cookie"]);
 			else
 				Cookies = new Dictionary<string, string>();
+
 			if(Headers.ContainsKey("content-length")) {
 				long contentLength = Convert.ToInt64(Headers["content-length"]);
-				BufferContext bufferContext = new BufferContext();
-				bufferContext.Buffer = new byte[4096];
-				bufferContext.Stream = stream;
-				bufferContext.Offset = 0;
-				bufferContext.Count = 0;
 				InputStream = new LengthLimitedStream(bufferContext, contentLength);
 			}
+			else if(Headers.ContainsKey("transfer-encoding") && (Headers["transfer-encoding"].ToLower() == "chunked"))
+				InputStream = new InputChunkedStream(bufferContext);
 			else
-				throw new NotImplementedException("Only Content-Length content are supported");
+				InputStream = new LengthLimitedStream(bufferContext, 0);
 		}
 
 		/// <summary>

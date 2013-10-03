@@ -130,7 +130,8 @@ namespace Erasme.Http
 						decoder.ReadEqual();
 						if(!decoder.Read())
 							throw new Exception("No value");
-						value = decoder.ReadString();
+						// handle how Chrome and Safari escape " (double quotes)
+						value = decoder.ReadString().Replace("%22", "\"");
 						if(decoder.Read()) {
 							if(decoder.IsSeparator)
 								decoder.ReadSeparator();

@@ -40,7 +40,7 @@ namespace Erasme.Http
 			Headers.ContentType = "application/octet-stream";
 		}
 
-		public FileContent(string filePath): base(new FileStream(filePath, FileMode.Open, FileAccess.Read))
+		public FileContent(string filePath): base(new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
 		{
 			Headers.ContentType = "application/octet-stream";
 			FileName = System.IO.Path.GetFileName(filePath);
@@ -430,6 +430,7 @@ namespace Erasme.Http
 			case ".svg": retval = "image/svg+xml"; break;
 			case ".svr": retval = "application/x-world"; break;
 			case ".swf": retval = "application/x-shockwave-flash"; break;
+			case "sxw":	retval = "application/vnd.sun.xml.writer"; break;
 			case ".t": retval = "application/x-troff"; break;
 			case ".talk": retval = "text/x-speech"; break;
 			case ".tar": retval = "application/x-tar"; break;

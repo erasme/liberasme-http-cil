@@ -40,7 +40,7 @@ namespace Erasme.Http
 	{
 		static Regex quotedPrintableRegex = new Regex("=\\?([^\\?]+)\\?Q\\?(=[0-9A-F][0-9A-F])+\\?=", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-		public static bool ReadLine(ArraySegment<byte> segment, StringBuilder sb, ref bool cr, out int used)
+		public static bool ReadLine(ArraySegment<byte> segment, MemoryStream stringBuffer, ref bool cr, out int used)
 		{
 			used = 0;
 			int count = segment.Count;
@@ -66,7 +66,7 @@ namespace Erasme.Http
 						throw new Exception("Invalid line format (LF without CR)");
 					}
 					else {
-						sb.Append((char)segment.Array[offset]);
+						stringBuffer.WriteByte(segment.Array[offset]);
 					}
 				}
 				count--;
@@ -75,7 +75,7 @@ namespace Erasme.Http
 			return false;
 		}
 
-		public static bool ReadLine(BufferContext bufferContext, StringBuilder sb, ref bool cr)
+		public static bool ReadLine(BufferContext bufferContext, MemoryStream stringBuffer, ref bool cr)
 		{
 			while(bufferContext.Count > 0) {
 				bufferContext.Count--;
@@ -99,52 +99,52 @@ namespace Erasme.Http
 						throw new Exception("Invalid line format");
 					}
 					else {
-						sb.Append((char)bufferContext.Buffer[offset]);
+						stringBuffer.WriteByte(bufferContext.Buffer[offset]);
 					}
 				}
 			}
 			return false;
 		}
 
-		public static async Task<string> ReadLineAsync(BufferContext bufferContext, StringBuilder sb)
+		public static async Task<string> ReadLineAsync(BufferContext bufferContext, MemoryStream stringBuffer)
 		{
 			bool cr = false;
-			while(!ReadLine(bufferContext, sb, ref cr)) {
+			while(!ReadLine(bufferContext, stringBuffer, ref cr)) {
 				await bufferContext.Fill();
 				if(bufferContext.Count == 0)
 					return null;
 			}
-			return sb.ToString();
+			return Encoding.UTF8.GetString(stringBuffer.GetBuffer(), 0, (int)stringBuffer.Length);
 		}
 
 		public static Task<string> ReadLineAsync(ISharedBufferStream stream)
 		{
-			return ReadLineAsync(stream, new StringBuilder(128));
+			return ReadLineAsync(stream, new MemoryStream(128));
 		}
 
-		public static async Task<string> ReadLineAsync(ISharedBufferStream stream, StringBuilder sb)
+		public static async Task<string> ReadLineAsync(ISharedBufferStream stream, MemoryStream stringBuffer)
 		{
 			bool cr = false;
 			int used = 0;
 			ArraySegment<byte> segment = await stream.SharedBufferReadAsync(Int32.MaxValue);
 			if(segment.Count == 0)
 					return null;
-			while(!ReadLine(segment, sb, ref cr, out used)) {
+			while(!ReadLine(segment, stringBuffer, ref cr, out used)) {
 				segment = await stream.SharedBufferReadAsync(Int32.MaxValue);
 				if(segment.Count == 0)
 					return null;
 			}
 			if(used != segment.Count)
 				stream.SharedBufferRewind(segment.Count - used);
-			return sb.ToString();
+			return Encoding.UTF8.GetString(stringBuffer.GetBuffer(), 0, (int)stringBuffer.Length);
 		}
 
 		public static Task<string> ReadLineAsync(BufferContext bufferContext)
 		{
-			return ReadLineAsync(bufferContext, new StringBuilder(128));
+			return ReadLineAsync(bufferContext, new MemoryStream(128));
 		}
 
-		public static async Task<bool> ReadHeadersAsync(BufferContext bufferContext, StringBuilder sb, Dictionary<string,string> headers)
+		public static async Task<bool> ReadHeadersAsync(BufferContext bufferContext, MemoryStream stringBuffer, Dictionary<string,string> headers)
 		{
 			bool cr = false;
 			string line = null;
@@ -157,9 +157,9 @@ namespace Erasme.Http
 				if(bufferContext.Count <= 0)
 					return false;
 				// read a line
-				if(ReadLine(bufferContext, sb, ref cr)) {
-					string line2 = sb.ToString();
-					sb.Clear();
+				if(ReadLine(bufferContext, stringBuffer, ref cr)) {
+					string line2 = Encoding.UTF8.GetString(stringBuffer.GetBuffer(), 0, (int)stringBuffer.Length);
+					stringBuffer.SetLength(0);
 					// multi lines header
 					if((line != null) && (line2.StartsWith(" ") || line2.StartsWith("\t"))) {
 						line += line2;

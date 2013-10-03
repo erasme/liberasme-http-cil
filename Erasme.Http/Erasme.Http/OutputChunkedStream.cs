@@ -38,7 +38,9 @@ namespace Erasme.Http
 	public class OutputChunkedStream: Stream
 	{
 		Stream stream;
+		bool isClosed = false;
 		static byte[] lineMarker = new byte[] { 0x0d, 0x0a };
+		static byte[] endStreamMarker = new byte[] { 0x30, 0x0d, 0x0a, 0x0d, 0x0a };
 
 		public OutputChunkedStream(Stream stream)
 		{
@@ -114,19 +116,23 @@ namespace Erasme.Http
 		
 		public override void Write(byte[] buffer, int offset, int count)
 		{
+			if(count <= 0)
+				throw new ArgumentException("Write count MUST be > 0", "count");
+
 			byte[] marker = Encoding.ASCII.GetBytes(String.Format("{0:X}\r\n", count));
 			stream.Write(marker, 0, marker.Length);
-			if(count > 0)
-				stream.Write(buffer, offset, count);
+			stream.Write(buffer, offset, count);
 			stream.Write(lineMarker, 0, 2);
 		}
 
 		public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
 		{
+			if(count <= 0)
+				throw new ArgumentException("Write count MUST be > 0", "count");
+
 			byte[] marker = Encoding.ASCII.GetBytes(String.Format("{0:X}\r\n", count));
 			await stream.WriteAsync(marker, 0, marker.Length, cancellationToken);
-			if(count > 0)
-				await stream.WriteAsync(buffer, offset, count, cancellationToken);
+			await stream.WriteAsync(buffer, offset, count, cancellationToken);
 			await stream.WriteAsync(lineMarker, 0, 2, cancellationToken);
 		}
 
@@ -148,6 +154,24 @@ namespace Erasme.Http
 		public override void SetLength(long value)
 		{
 			throw new NotSupportedException();
+		}
+
+		public Task CloseAsync()
+		{
+			return CloseAsync(CancellationToken.None);
+		}
+
+		public async Task CloseAsync(CancellationToken cancellationToken)
+		{
+			if(!isClosed) {
+				await stream.WriteAsync(endStreamMarker, 0, endStreamMarker.Length, cancellationToken);
+				isClosed = true;
+			}
+		}
+
+		public override void Close()
+		{
+			CloseAsync().Wait();
 		}
 	}
 }

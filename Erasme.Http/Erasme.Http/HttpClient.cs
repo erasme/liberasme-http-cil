@@ -28,31 +28,60 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Erasme.Http
 {
 	public class HttpClient: IDisposable
 	{
 		string hostname;
-		NetworkStream networkStream = null;
-		ReadBufferedStream stream;
+		NetStream networkStream = null;
+		SslStream sslStream = null;
+		Stream stream = null;
 		HttpClientResponse lastResponse = null;
+		BufferContext bufferContext;
+		MemoryStream stringBuffer = new MemoryStream(128);
 
 		HttpClient()
 		{
+			bufferContext = new BufferContext();
+			bufferContext.Offset = 0;
+			bufferContext.Count = 0;
+			bufferContext.ReadCounter = 0;
+			bufferContext.Buffer = new byte[4096];
 		}
 
-		public static HttpClient Create(string hostname, int port)
+		public static HttpClient Create(string hostname, int port = 80, bool secure = false)
 		{
 			HttpClient client = new HttpClient();
-			client.Open(hostname, port);
+			client.Open(hostname, port, secure);
 			return client;
 		}
 
-		public void Open(string hostname, int port)
+		public static bool RemoteCertificateValidation(
+			object sender, X509Certificate certificate, X509Chain chain,
+			SslPolicyErrors sslPolicyErrors)
+		{
+			// Accept all certificates
+			return true;
+		}
+
+		public static X509Certificate  LocalCertificateSelection(
+			object sender, string targetHost, X509CertificateCollection localCertificates,
+			X509Certificate remoteCertificate, string[] acceptableIssuers)
+		{
+			// take the first one
+			return localCertificates[0];
+		}
+
+		void Open(string hostname, int port, bool secure)
 		{
 			this.hostname = hostname;
 			IPAddress[] addresses = Dns.GetHostAddresses(hostname);
@@ -60,17 +89,23 @@ namespace Erasme.Http
 				throw new Exception("Cant resolv '"+hostname+"'");
 			Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			socket.Connect(addresses[0], port);
-			networkStream = new NetworkStream(socket, true);
-			stream = new ReadBufferedStream(networkStream, 4096);
+			networkStream = new NetStream(socket, true);
+			if(secure) {
+				sslStream = new SslStream(networkStream, true, RemoteCertificateValidation, LocalCertificateSelection);
+				sslStream.AuthenticateAsClient(hostname);
+				stream = sslStream;
+			}
+			else {
+				stream = networkStream;
+			}
+			bufferContext.Stream = stream;
 		}
 
 		void CleanResponse()
 		{
 			// finish reading the previous response input stream if needed
 			if(lastResponse != null) {
-				byte[] trashBuffer = new byte[1024];
-				while(lastResponse.InputStream.Read(trashBuffer, 0, trashBuffer.Length) > 0) {
-				}
+				while(lastResponse.InputStream.Read(null, 0, int.MaxValue) > 0) {}
 				lastResponse = null;
 			}
 		}
@@ -82,22 +117,34 @@ namespace Erasme.Http
 
 			if(!request.Headers.ContainsKey("host"))
 				request.Headers["host"] = hostname;
-			request.CopyTo(networkStream);
+			request.CopyTo(stream);
 			request.Sent = true;
 		}
 
 		public HttpClientResponse GetResponse()
 		{
-			string command = HttpUtility.ReadLine(networkStream);
-			Dictionary<string,string> headers = HttpUtility.ReadHeaders(networkStream);
-
-			lastResponse = new HttpClientResponse(command, headers, stream);
+			stringBuffer.SetLength(0);
+			Task<string> task = HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
+			task.Wait();
+			string command = task.Result;
+			if(command == null)
+				return null;
+			stringBuffer.SetLength(0);
+			// read the headers
+			HttpHeaders headers = new HttpHeaders();
+			Task<bool> taskBool = HttpUtility.ReadHeadersAsync(bufferContext, stringBuffer, headers);
+			taskBool.Wait();
+			if(!taskBool.Result)
+				return null;
+			lastResponse = new HttpClientResponse(command, headers, bufferContext);
 			return lastResponse;
 		}
 
 		public void Close()
 		{
 			CleanResponse();
+			if(sslStream != null)
+				sslStream.Close();
 			networkStream.Close();
 		}
 

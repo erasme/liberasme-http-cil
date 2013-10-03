@@ -49,7 +49,7 @@ namespace Erasme.Http
 		EndPoint localEndPoint;
 		long requestCounter = 0;
 		BufferContext bufferContext;
-		StringBuilder sb = new StringBuilder(128, 1024);
+		MemoryStream stringBuffer = new MemoryStream(128);
 
 		object instanceLock = new object();
 		HttpContext context = null;
@@ -126,9 +126,9 @@ namespace Erasme.Http
 			}
 		}
 
-		internal StringBuilder StringBuilder {
+		internal MemoryStream StringBuffer {
 			get {
-				return sb;
+				return stringBuffer;
 			}
 		}
 
@@ -208,16 +208,22 @@ namespace Erasme.Http
 		{
 			long startReadCounter = ReadCounter;
 
-			sb.Clear();
-			string command = await HttpUtility.ReadLineAsync(bufferContext, sb);
+			stringBuffer.SetLength(0);
+			string command = await HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
 			if(command == null)
 				return null;
 			DateTime startTime = DateTime.Now;
-			sb.Clear();
+			stringBuffer.SetLength(0);
 			// read the headers
 			HttpHeaders headers = new HttpHeaders();
-			if(await Http.HttpUtility.ReadHeadersAsync(bufferContext, sb, headers))
+			if(await Http.HttpUtility.ReadHeadersAsync(bufferContext, stringBuffer, headers)) {
+				// handle Expect: 100-continue
+				if(headers.ContainsKey("expect") && headers["expect"].StartsWith("100-continue")) {
+					byte[] buffer = Encoding.UTF8.GetBytes("HTTP/1.1 100 Continue\r\n\r\n");
+					await Stream.WriteAsync(buffer, 0, buffer.Length);
+				}
 				return new HttpServerRequest(this, command, headers, startTime, startReadCounter);
+			}
 			else
 				return null;
 		}
