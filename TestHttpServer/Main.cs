@@ -275,6 +275,34 @@ namespace TestHttpServer
 	}
 
 	/// <summary>
+	/// Sample HTTP proxy service
+	/// </summary>
+	class ProxyHandler: IHttpHandler
+	{
+		public Task ProcessRequestAsync(HttpContext context)
+		{
+			if(context.Request.Method == "GET") {
+				Uri uri = new System.Uri(context.Request.Path.Substring(1));
+				using(HttpClient client = HttpClient.Create(uri.DnsSafeHost, uri.Port, uri.Scheme == "https")) {
+					HttpClientRequest request = new HttpClientRequest();
+					request.Method = "GET";
+					request.Path = "/";
+					client.SendRequest(request);
+					HttpClientResponse response = client.GetResponse();
+					context.Response.StatusCode = response.StatusCode;
+					context.Response.Content = new StreamContent(response.InputStream);
+					// force to send the result now. Needed to do this before
+					// closing the HttpClient because after, the response.InputStream is
+					// no more available
+					context.SendResponse();
+					client.Close();
+				}
+			}
+			return Task.FromResult<Object>(null);
+		}
+	}
+
+	/// <summary>
 	/// Test http server. Override WebSocket handlers to log what happends
 	/// </summary>
 	class TestHttpServer: HttpServer
@@ -368,6 +396,7 @@ namespace TestHttpServer
 			Thread.CurrentThread.Name = "HttpServer";
 
 			HttpServer server = new TestHttpServer(3333);
+			server.AllowGZip = false;
 
 			PathMapper mapper = new PathMapper();
 			server.Add(mapper);
@@ -380,6 +409,7 @@ namespace TestHttpServer
 			mapper.Add("/files", new FileHandler());
 			mapper.Add("/multipart", new MultiPartHandler());
 			mapper.Add("/broken", new BrokenHandler());
+			mapper.Add("/proxy", new ProxyHandler());
 			server.Add(new HttpSendResponse());
 			server.Add(new ConsoleLogger());
 

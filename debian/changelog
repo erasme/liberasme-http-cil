@@ -8,6 +8,11 @@ liberasme-http-cil (1.0.1) raring; urgency=low (NOT YET RELEASED)
     seems to be bugged when providing small buffer (like 1). Avoid the problem
     using ReadAsBytes*
   * Correct WOFF mimetype to application/font-woff
+  * Added support for chunked input in HttpClient
+  * Added support for HTTPS in HttpClient
+  * Add SendResponse to HttpContext
+  * Added support for HTTP/1.1 100 Continue
+  * Add API to control whether or not the server should use GZip
 
  -- Daniel Lacroix <dlacroix@erasme.org>  Wed,  7 Aug 2013 16:58:00 +0200
 
