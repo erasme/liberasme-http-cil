@@ -70,7 +70,7 @@ namespace TestHttpServer
 		{
 			if(context.Request.IsWebSocketRequest)
 				// accept the web socket and process it
-				await context.AcceptWebSocketRequest(new EchoClient());
+				await context.AcceptWebSocketRequestAsync(new EchoClient());
 		}
 	}
 

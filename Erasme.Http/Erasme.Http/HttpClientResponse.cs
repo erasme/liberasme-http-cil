@@ -161,14 +161,22 @@ namespace Erasme.Http
 		/// </returns>
 		public byte[] ReadAsBytes()
 		{
-			byte[] buffer = new byte[InputStream.Length];
-			int offset = 0;
-			int count = 0;
-			int size;
-			do {
-				size = InputStream.Read(buffer, offset, (int)InputStream.Length - count);
-				count += size;
-			} while((size > 0) &&(count < InputStream.Length));
+			MemoryStream stream;
+			try {
+				long length = InputStream.Length;
+				stream = new MemoryStream((int)length);
+			}
+			catch(NotSupportedException) {
+				stream = new MemoryStream();
+			}
+			InputStream.CopyTo(stream);
+			byte[] buffer;
+			if(stream.GetBuffer().LongLength != stream.Length) {
+				buffer = new byte[stream.Length];
+				Array.Copy(stream.GetBuffer(), buffer, (int)stream.Length);
+			}
+			else
+				buffer = stream.GetBuffer();
 			return buffer;
 		}
 

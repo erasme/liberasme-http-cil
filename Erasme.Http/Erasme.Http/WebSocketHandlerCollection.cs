@@ -65,24 +65,26 @@ namespace Erasme.Http
 
 		public void Broadcast(string message)
 		{
-			// Send is a non blocking method this is why
-			// we cant do it under lock
+			// copy the handlers list
+			T[] localList;
 			lock(instanceLock) {
-				// TODO: auto-remove a handler if its connection is lost
-				foreach(WebSocketHandler handler in list)
-					handler.Send(message);
+				localList = list.ToArray();
 			}
+			// TODO: auto-remove a handler if its connection is lost
+			foreach(WebSocketHandler handler in localList)
+				handler.Send(message);
 		}
 
 		public void Broadcast(byte[] message)
 		{
-			// Send is a non blocking method this is why
-			// we cant do it under lock
+			// copy the handlers list
+			T[] localList;
 			lock(instanceLock) {
-				// TODO: auto-remove a handler if its connection is lost
-				foreach(WebSocketHandler handler in list)
-					handler.Send(message);
+				localList = list.ToArray();
 			}
+			// TODO: auto-remove a handler if its connection is lost
+			foreach(WebSocketHandler handler in localList)
+				handler.Send(message);
 		}
 	}
 }

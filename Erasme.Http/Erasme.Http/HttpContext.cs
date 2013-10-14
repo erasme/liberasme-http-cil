@@ -94,7 +94,7 @@ namespace Erasme.Http
 				throw new Exception("Request is not a WebSocket");
 		}
 
-		public Task AcceptWebSocketRequest(WebSocketHandler handler)
+		public Task AcceptWebSocketRequestAsync(WebSocketHandler handler)
 		{
 			return handler.ProcessWebSocketRequestAsync(this);
 		}
