@@ -84,6 +84,7 @@
     <Compile Include="Erasme.Http\OutputChunkedStream.cs" />
     <Compile Include="Erasme.Http\ISharedBufferStream.cs" />
     <Compile Include="Erasme.Http\WebRequest.cs" />
+    <Compile Include="Erasme.Http\WWWAuthentication.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
