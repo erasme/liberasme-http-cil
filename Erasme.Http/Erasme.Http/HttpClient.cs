@@ -140,6 +140,17 @@ namespace Erasme.Http
 			return lastResponse;
 		}
 
+		public Task WaitForRemoteCloseAsync()
+		{
+			byte[] trash = new byte[1];
+			return stream.ReadAsync(trash, 0, 1);
+		}
+
+		public void WaitForRemoteClose()
+		{
+			WaitForRemoteCloseAsync().Wait();
+		}
+
 		public void Close()
 		{
 			CleanResponse();
