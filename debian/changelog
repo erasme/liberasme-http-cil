@@ -1,4 +1,4 @@
-liberasme-http-cil (1.0.1) raring; urgency=low (NOT YET RELEASED)
+liberasme-http-cil (1.0.1) raring; urgency=low
 
   * Correct a bug in HttpServerClient not resetting WebSocket clients
   * Catch SocketException in HttpServerClient
@@ -14,7 +14,7 @@ liberasme-http-cil (1.0.1) raring; urgency=low (NOT YET RELEASED)
   * Added support for HTTP/1.1 100 Continue
   * Add API to control whether or not the server should use GZip
 
- -- Daniel Lacroix <dlacroix@erasme.org>  Wed,  7 Aug 2013 16:58:00 +0200
+ -- Daniel Lacroix <dlacroix@erasme.org>  Thu,  7 Nov 2013 16:56:00 +0100
 
 liberasme-http-cil (1.0) raring; urgency=low
 
