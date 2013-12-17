@@ -1,6 +1,7 @@
 // WebSocket10.cs
 // 
 //  Implement HTTP WebSocket for protocol version 10 and 13
+//  see: http://tools.ietf.org/search/draft-ietf-hybi-thewebsocketprotocol-13
 //
 // Author(s):
 //  Daniel Lacroix <dlacroix@erasme.org>
@@ -63,9 +64,13 @@ namespace Erasme.Http
 		const string GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 		byte[] readBuffer = new byte[4096];
+		int readBufferOffset = 0;
+		int readBufferCount = 0;
+
 		int readPos = 0;
 		bool opcodeDone = false;
 		Opcode opcode = Opcode.Text;
+		WebSocketMessageType messageType = WebSocketMessageType.Text;
 		bool fin = true;
 		bool mask = false;
 			
@@ -113,22 +118,17 @@ namespace Erasme.Http
 
 		public override async Task CloseAsync(WebSocketCloseStatus closeStatus, string statusDescription, CancellationToken cancellationToken)
 		{
-			if(State == WebSocketState.Open) {
-				byte[] buffer;
-				if(statusDescription != null)
-					buffer = Encoding.UTF8.GetBytes(statusDescription);
-				else
-					buffer = new byte[0];
-				await SendAsync(new ArraySegment<byte>(buffer, 0, buffer.Length), WebSocketMessageType.Close, true, cancellationToken);
+			byte[] buffer;
+			if(statusDescription != null) {
+				byte[] statusBytes = Encoding.UTF8.GetBytes(statusDescription);
+				buffer = new byte[statusBytes.Length + 2];
+				System.Buffer.BlockCopy(statusBytes, 0, buffer, 2, statusBytes.Length);
 			}
-			if(State == WebSocketState.CloseReceived) {
-				byte[] buffer;
-				if(statusDescription != null)
-					buffer = Encoding.UTF8.GetBytes(statusDescription);
-				else
-					buffer = new byte[0];
-				await SendAsync(new ArraySegment<byte>(buffer, 0, buffer.Length), WebSocketMessageType.Close, true, cancellationToken);
-			}
+			else
+				buffer = new byte[2];
+			buffer[0] = (byte)((((int)closeStatus) >> 8) & 0xff);
+			buffer[1] = (byte)(((int)closeStatus) & 0xff);
+			await SendAsync(new ArraySegment<byte>(buffer, 0, buffer.Length), WebSocketMessageType.Close, true, cancellationToken);
 		}
 
 		public override async Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
@@ -140,84 +140,93 @@ namespace Erasme.Http
 			this.buffer = buffer;
 			while(true) {
 				bool pingNeeded = false;
-				int size = 0;
-				try {
-					Task timeoutTask = Task.Delay(keepAliveInterval);
-					if(readTask == null)
-						readTask = Context.Client.Stream.ReadAsync(readBuffer, 0, readBuffer.Length);
 
-					Task resTask = await Task.WhenAny(timeoutTask, readTask);
+				if(readBufferCount <= 0) {
+					try {
+						Task timeoutTask = Task.Delay(keepAliveInterval);
+						if(readTask == null)
+							readTask = Context.Client.Stream.ReadAsync(readBuffer, 0, readBuffer.Length);
 
-					if(resTask == timeoutTask) {
-						// no message was started
-						if(!opcodeDone) {
-							TimeSpan deltaTime = DateTime.Now - lastSeen;
+						Task resTask = await Task.WhenAny(timeoutTask, readTask);
 
-							// no message received no even a pong, close the connection
-							if(deltaTime.TotalSeconds > keepAliveInterval.TotalSeconds * 2) {
+						if(resTask == timeoutTask) {
+							// no message was started
+							if(!opcodeDone) {
+								TimeSpan deltaTime = DateTime.Now - lastSeen;
+
+								// no message received no even a pong, close the connection
+								if(deltaTime.TotalSeconds > keepAliveInterval.TotalSeconds * 2) {
+									Context.Client.Stream.Close();
+									State = WebSocketState.Closed;
+									return null;
+								}
+								// time for a ping
+								else {
+									pingNeeded = true;
+								}
+							}
+							// message in progress but too slow to come
+							// in a keep alive interval
+							// close the connection
+							else {
 								Context.Client.Stream.Close();
 								State = WebSocketState.Closed;
 								return null;
 							}
-							// time for a ping
-							else {
-								pingNeeded = true;
-							}
 						}
-						// message in progress but too slow to come
-						// in a keep alive interval
-						// close the connection
 						else {
-							Context.Client.Stream.Close();
-							State = WebSocketState.Closed;
-							return null;
+							readBufferOffset = 0;
+							readBufferCount = readTask.Result;
+							Console.WriteLine("readBufferCount: "+readBufferCount);
+							readTask = null;
 						}
 					}
-					else {
-						size = readTask.Result;
-						readTask = null;
+					catch(Exception e) {
+						Console.WriteLine(e.ToString());
+						Context.Client.Stream.Close();
+						State = WebSocketState.Closed;
+						return null;
 					}
-				}
-				catch(Exception) {
-					Context.Client.Stream.Close();
-					State = WebSocketState.Closed;
-					return null;
 				}
 
 				if(pingNeeded) {
+					Console.WriteLine("Ping needed");
 					await SendPingAsync();
 					continue;
 				}
-				if(size == 0) {
+
+				if(readBufferCount == 0) {
 					State = WebSocketState.Closed;
 					return null;
 				}
 
 				lastSeen = DateTime.Now;
+				WebSocketReceiveResult result = null;
 
-				for(int i = 0; i < size; i++) {
+				for(; (result == null) && (readBufferCount > 0); readBufferOffset++, readBufferCount--) {
+
 					// read the opcode part
 					if(!opcodeDone) {
-						fin = ((readBuffer[i] & (1 << 7)) != 0);
-						opcode = (Opcode)(readBuffer[i] & 0xf);
+						fin = ((readBuffer[readBufferOffset] & (1 << 7)) != 0);
+						opcode = (Opcode)(readBuffer[readBufferOffset] & 0xf);
 						opcodeDone = true;
 					}
 					// read the payload part
 					else if(!payloadDone) {
 						if(readPos == 0) {
 							payload = 0;
-							mask = ((readBuffer[i] & 128) != 0);
-							if((readBuffer[i] & 127) == 127) {
+							mask = ((readBuffer[readBufferOffset] & 128) != 0);
+							if((readBuffer[readBufferOffset] & 127) == 127) {
 								payloadBytes = 8;
 								readPos++;
 							}
-							else if((readBuffer[i] & 127) == 126) {
+							else if((readBuffer[readBufferOffset] & 127) == 126) {
 								payloadBytes = 2;
 								readPos++;
 							}
 							else {
 								payloadBytes = 1;
-								payload = (UInt64)(readBuffer[i] & 127);
+								payload = (UInt64)(readBuffer[readBufferOffset] & 127);
 								payloadDone = true;
 								if(!mask && (payload == 0)) {
 									readPos = 0;
@@ -225,15 +234,13 @@ namespace Erasme.Http
 									payloadDone = false;
 									maskingKeyDone = false;
 
-									WebSocketReceiveResult result = await BuildResultAsync();
-									if(result != null)
-										return result;
+									result = await BuildResultAsync();
 								}
 							}
 						}
 						else {
 							payload <<= 8;
-							payload += readBuffer[i];
+							payload += readBuffer[readBufferOffset];
 							if(readPos >= payloadBytes) {
 								payloadDone = true;
 								readPos = 0;											
@@ -243,9 +250,7 @@ namespace Erasme.Http
 									payloadDone = false;
 									maskingKeyDone = false;
 
-									WebSocketReceiveResult result = await BuildResultAsync();
-									if(result != null)
-										return result;
+									result = await BuildResultAsync();
 								}
 							}
 							else
@@ -254,28 +259,26 @@ namespace Erasme.Http
 					}
 					// read the masking key if needed
 					else if(mask && !maskingKeyDone) {
-						maskingKey[readPos] = readBuffer[i];
+						maskingKey[readPos] = readBuffer[readBufferOffset];
 						if(++readPos >= 4) {
 							maskingKeyDone = true;
-							readPos = 0;										
+							readPos = 0;		
 							if(payload == 0) {
 								readPos = 0;
 								opcodeDone = false;
 								payloadDone = false;
 								maskingKeyDone = false;
 
-								WebSocketReceiveResult result = await BuildResultAsync();
-								if(result != null)
-									return result;
+								result = await BuildResultAsync();
 							}
 						}
 					}
 					// else read frame data
 					else {
 						if(mask)
-							buffer.Array[buffer.Offset + readPos] = (byte)(readBuffer[i] ^ maskingKey[readPos % 4]);
+							buffer.Array[buffer.Offset + readPos] = (byte)(readBuffer[readBufferOffset] ^ maskingKey[readPos % 4]);
 						else
-							buffer.Array[buffer.Offset + readPos ] = readBuffer[i];
+							buffer.Array[buffer.Offset + readPos ] = readBuffer[readBufferOffset];
 						readPos++;
 						if((UInt64)readPos >= payload) {
 							// frame done
@@ -284,12 +287,12 @@ namespace Erasme.Http
 							payloadDone = false;
 							maskingKeyDone = false;
 
-							WebSocketReceiveResult result = await BuildResultAsync();
-							if(result != null)
-								return result;
+							result = await BuildResultAsync();
 						}
 					}
 				}
+				if(result != null)
+					return result;
 			}
 		}
 
@@ -321,16 +324,20 @@ namespace Erasme.Http
 					return new WebSocketReceiveResult((int)payload, WebSocketMessageType.Close, true, closeStatus, closeStatusDescription);
 				}
 			}
-			else if(opcode == Opcode.Text)
+			else if(opcode == Opcode.Text) {
+				messageType = WebSocketMessageType.Text;
 				return new WebSocketReceiveResult((int)payload, WebSocketMessageType.Text, fin, null, null);
-			else if(opcode == Opcode.Binary)
+			}
+			else if(opcode == Opcode.Binary) {
+				messageType = WebSocketMessageType.Binary;
 				return new WebSocketReceiveResult((int)payload, WebSocketMessageType.Binary, fin, null, null);
+			}
 			else if(opcode == Opcode.Continuation) {
-				// TODO
-				return null;
+				Console.WriteLine("Opcode.Continuation");
+				return new WebSocketReceiveResult((int)payload, messageType, fin, null, null);
 			}
 			else
-				throw new Exception("WebSocket opcode not handled");
+				throw new Exception("WebSocket opcode not handled ("+opcode+")");
 		}
 
 		public override async Task SendAsync(

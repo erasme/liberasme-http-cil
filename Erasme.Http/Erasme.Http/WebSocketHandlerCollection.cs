@@ -28,11 +28,12 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Erasme.Http
 {
-	public class WebSocketHandlerCollection<T> where T: WebSocketHandler
+	public class WebSocketHandlerCollection<T>: IEnumerable<T> where T: WebSocketHandler
 	{
 		object instanceLock = new object();
 		List<T> list = new List<T>();
@@ -85,6 +86,21 @@ namespace Erasme.Http
 			// TODO: auto-remove a handler if its connection is lost
 			foreach(WebSocketHandler handler in localList)
 				handler.Send(message);
+		}
+
+		public IEnumerator GetEnumerator()
+		{
+			return ((IEnumerable<T>)this).GetEnumerator();
+		}
+
+		IEnumerator<T> IEnumerable<T>.GetEnumerator()
+		{
+			IEnumerator<T> enumerator;
+			lock(instanceLock) {
+				List<T> listCopy = new List<T>(list);
+				enumerator = ((IEnumerable<T>)listCopy).GetEnumerator();
+			}
+			return enumerator;
 		}
 	}
 }

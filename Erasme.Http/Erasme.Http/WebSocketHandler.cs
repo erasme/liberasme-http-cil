@@ -155,7 +155,7 @@ namespace Erasme.Http
 
 			while(WebSocket.State == WebSocketState.Open) {
 
-				// handle reveive
+				// handle receive
 				if(Task.WaitAny(receiveTask, sendSource.Task) == 0) {
 
 					WebSocketReceiveResult receiveResult = receiveTask.Result;
