@@ -223,12 +223,7 @@ namespace Erasme.Json
 			this.content = content;
 			pos = 0;
 			RemoveSpace();
-			if(content[pos] == '[')
-				return ReadArray();
-			else if(content[pos] == '{')
-				return ReadObject();
-			else
-				throw new Exception("Invalid JSON");
+			return ReadValue();
 		}
 	}
 }
