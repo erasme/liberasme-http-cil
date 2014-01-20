@@ -177,12 +177,10 @@ namespace Erasme.Http
 						else {
 							readBufferOffset = 0;
 							readBufferCount = readTask.Result;
-							Console.WriteLine("readBufferCount: "+readBufferCount);
 							readTask = null;
 						}
 					}
 					catch(Exception e) {
-						Console.WriteLine(e.ToString());
 						Context.Client.Stream.Close();
 						State = WebSocketState.Closed;
 						return null;
@@ -190,7 +188,6 @@ namespace Erasme.Http
 				}
 
 				if(pingNeeded) {
-					Console.WriteLine("Ping needed");
 					await SendPingAsync();
 					continue;
 				}
@@ -333,7 +330,6 @@ namespace Erasme.Http
 				return new WebSocketReceiveResult((int)payload, WebSocketMessageType.Binary, fin, null, null);
 			}
 			else if(opcode == Opcode.Continuation) {
-				Console.WriteLine("Opcode.Continuation");
 				return new WebSocketReceiveResult((int)payload, messageType, fin, null, null);
 			}
 			else
