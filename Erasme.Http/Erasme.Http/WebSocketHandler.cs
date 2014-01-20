@@ -150,62 +150,66 @@ namespace Erasme.Http
 
 			Server.OnWebSocketHandlerOpen(this);
 
-			Task<WebSocketReceiveResult> receiveTask = WebSocket.ReceiveAsync(
-				new ArraySegment<byte>(buffer), CancellationToken.None);
+			try {
+				Task<WebSocketReceiveResult> receiveTask = WebSocket.ReceiveAsync(
+					new ArraySegment<byte>(buffer), CancellationToken.None);
 
-			while(WebSocket.State == WebSocketState.Open) {
+				while(WebSocket.State == WebSocketState.Open) {
 
-				// handle receive
-				if(Task.WaitAny(receiveTask, sendSource.Task) == 0) {
+					// handle receive
+					if(Task.WaitAny(receiveTask, sendSource.Task) == 0) {
 
-					WebSocketReceiveResult receiveResult = receiveTask.Result;
+						WebSocketReceiveResult receiveResult = receiveTask.Result;
 
-					if(receiveResult == null)
-						break;
+						if(receiveResult == null)
+							break;
 
-					if(receiveResult.MessageType == WebSocketMessageType.Close)
-						await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-					else if(receiveResult.MessageType == WebSocketMessageType.Binary)
-						await WebSocket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Binary frame not supported", CancellationToken.None);
+						if(receiveResult.MessageType == WebSocketMessageType.Close)
+							await WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+						else if(receiveResult.MessageType == WebSocketMessageType.Binary)
+							await WebSocket.CloseAsync(WebSocketCloseStatus.InvalidMessageType, "Binary frame not supported", CancellationToken.None);
+						else {
+							int count = receiveResult.Count;
+							bool tooBig = false;
+
+							while(!tooBig && (receiveResult.EndOfMessage == false)) {
+								if(count >= buffer.Length) {
+									string closeMessage = string.Format("Maximum message size: {0} bytes", buffer.Length);
+									await WebSocket.CloseAsync(WebSocketCloseStatus.MessageTooBig, closeMessage, CancellationToken.None);
+								}
+								else {
+									receiveResult = await WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer, count, buffer.Length - count), CancellationToken.None);
+									count += receiveResult.Count;
+								}
+							}
+							if(!tooBig) {
+								string message = Encoding.UTF8.GetString(buffer, 0, count);
+								Server.OnWebSocketHandlerMessage(this, message);
+							}
+						}
+						// create a new receive task
+						receiveTask = WebSocket.ReceiveAsync(
+							new ArraySegment<byte>(buffer), CancellationToken.None);
+					}
+					// handle send
 					else {
-						int count = receiveResult.Count;
-						bool tooBig = false;
-
-						while(!tooBig && (receiveResult.EndOfMessage == false)) {
-							if(count >= buffer.Length) {
-								string closeMessage = string.Format("Maximum message size: {0} bytes", buffer.Length);
-								await WebSocket.CloseAsync(WebSocketCloseStatus.MessageTooBig, closeMessage, CancellationToken.None);
-							}
-							else {
-								receiveResult = await WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer, count, buffer.Length - count), CancellationToken.None);
-								count += receiveResult.Count;
-							}
+						SendMessage[] localSendList;
+						lock(instanceLock) {
+							sendSource = new TaskCompletionSource<object>();
+							localSendList = sendList.ToArray();
+							sendList = new Queue<SendMessage>();
 						}
-						if(!tooBig) {
-							string message = Encoding.UTF8.GetString(buffer, 0, count);
-							Server.OnWebSocketHandlerMessage(this, message);
+						foreach(SendMessage message in localSendList) {
+							await WebSocket.SendAsync(
+								new ArraySegment<byte>(message.Content),
+								message.Type, true, CancellationToken.None);
 						}
-					}
-					// create a new receive task
-					receiveTask = WebSocket.ReceiveAsync(
-						new ArraySegment<byte>(buffer), CancellationToken.None);
-				}
-				// handle send
-				else {
-					SendMessage[] localSendList;
-					lock(instanceLock) {
-						sendSource = new TaskCompletionSource<object>();
-						localSendList = sendList.ToArray();
-						sendList = new Queue<SendMessage>();
-					}
-					foreach(SendMessage message in localSendList) {
-						await WebSocket.SendAsync(
-							new ArraySegment<byte>(message.Content),
-							message.Type, true, CancellationToken.None);
 					}
 				}
 			}
-			Server.OnWebSocketHandlerClose(this);
+			finally {
+				Server.OnWebSocketHandlerClose(this);
+			}
 		}
 	}
 }
