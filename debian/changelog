@@ -1,11 +1,14 @@
-liberasme-http-cil (1.0.2) saucy; urgency=low (NOT YET RELEASED)
+liberasme-http-cil (1.0.2) saucy; urgency=low
 
+  * Support primitive values in JsonDeserializer
   * Add IEnumerable<T> to WebSocketHandlerCollection
   * Support Continuation frames in WebSocket10
   * Correct a bug in WebSocket10 where data were dropped when
     input traffic was too high
+  * Correct a bug in WebSocketHandler which prevent "Close" to be called
+    if network exception occur
 
- -- Daniel Lacroix <dlacroix@erasme.org>  Thu,  7 Nov 2013 16:56:00 +0100
+ -- Daniel Lacroix <dlacroix@erasme.org>  Mon, 20 Jan 2014 14:29:00 +0200
 
 liberasme-http-cil (1.0.1) raring; urgency=low
 
