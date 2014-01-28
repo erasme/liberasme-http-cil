@@ -28,6 +28,7 @@
 //
 
 using System;
+using System.Collections;
 using System.Threading.Tasks;
 
 namespace Erasme.Http
@@ -38,6 +39,7 @@ namespace Erasme.Http
 		{
 			Client = client;
 			Request = request;
+			Data = new Hashtable();
 			Response = new HttpServerResponse();
 		}
 
@@ -46,6 +48,8 @@ namespace Erasme.Http
 		public HttpServerRequest Request { get; internal set; }
 
 		public HttpServerResponse Response { get; internal set; }
+
+		public Hashtable Data { get; internal set; }
 
 		public string User { get; set; }
 
