@@ -231,7 +231,7 @@ namespace Erasme.Http
 		public async Task ProcessAsync()
 		{
 			try {
-				while(KeepAliveCountdown > 0) {
+				while(KeepAliveCountdown >= 0) {
 					HttpServerRequest request;
 					try {
 						request = await ReadRequestAsync();

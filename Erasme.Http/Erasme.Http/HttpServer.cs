@@ -58,6 +58,8 @@ namespace Erasme.Http
 			name = (Assembly.GetEntryAssembly().GetName().Name)+" (v"+Assembly.GetEntryAssembly().GetName().Version+")";
 			StopOnException = false;
 			AllowGZip = true;
+			KeepAliveMax = 100;
+			KeepAliveTimeout = 10;
 		}
 
 		public string ServerName {
@@ -75,6 +77,10 @@ namespace Erasme.Http
 		/// </summary>
 		/// <value><c>true</c> if allow GZip; otherwise, <c>false</c>.</value>
 		public bool AllowGZip { get; set; }
+
+		public int KeepAliveMax { get; set; }
+
+		public int KeepAliveTimeout { get; set; }
 
 		public Task RunAsync(bool disposeHandlers = false)
 		{
@@ -109,11 +115,15 @@ namespace Erasme.Http
 				LinkedListNode<HttpServerClient> clientNode = clientsPool.Get();
 				if(clientNode == null) {
 					client = new HttpServerClient(this, e.AcceptSocket);
+					client.KeepAliveCountdown = KeepAliveMax;
+					client.KeepAliveTimeout = KeepAliveTimeout;
 					clientNode = new LinkedListNode<HttpServerClient>(client);
 				}
 				else {
 					client = clientNode.Value;
 					client.Reset(e.AcceptSocket);
+					client.KeepAliveCountdown = KeepAliveMax;
+					client.KeepAliveTimeout = KeepAliveTimeout;
 				}
 
 				lock(instanceLock) {
