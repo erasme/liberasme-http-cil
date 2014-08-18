@@ -5,7 +5,7 @@
 // Author(s):
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
-// Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2013-2014 Departement du Rhone
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 // 
 
 using System;
+using System.Dynamic;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -126,6 +127,34 @@ namespace Erasme.Json
 		public void RemoveAt(int index)
 		{
 			list.RemoveAt(index);
+		}
+
+		public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
+		{
+			int index = (int)indexes[0];
+			if(index < list.Count) {
+				list[index] = (JsonValue)value;
+				return true;
+			}
+			else if(index == list.Count) {
+				list.Add((JsonValue)value);
+				return true;
+			}
+			else
+				return false;
+		}
+
+		public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
+		{
+			int index = (int)indexes[0];
+			if(index < list.Count) {
+				result = list[index];
+				return true;
+			}
+			else {
+				result = null;
+				return false;
+			}
 		}
 	}
 }

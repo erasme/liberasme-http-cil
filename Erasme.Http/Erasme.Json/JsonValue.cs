@@ -29,11 +29,12 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Dynamic;
 using System.Collections.Generic;
 
 namespace Erasme.Json
 {
-	public abstract class JsonValue
+	public abstract class JsonValue: DynamicObject
 	{
 		public JsonValue()
 		{
@@ -227,6 +228,21 @@ namespace Erasme.Json
 		public static JsonValue Load(Stream stream)
 		{
 			return Load(new StreamReader(stream, Encoding.UTF8));
+		}
+
+		public void Merge(JsonValue source)
+		{
+			Merge(this, source);
+		}
+
+		public static void Merge(JsonValue dest, JsonValue source)
+		{
+			foreach(string key in source.Keys) {
+				if(dest.Keys.Contains(key) && (dest[key] is JsonObject) && (source[key] is JsonObject))
+					Merge(dest[key], source[key]);
+				else
+					dest[key] = source[key];
+			}
 		}
 	}
 }

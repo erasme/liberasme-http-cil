@@ -5,7 +5,7 @@
 // Author(s):
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
-// Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2013-2014 Departement du Rhone
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 //
 
 using System;
+using System.Dynamic;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -147,6 +148,24 @@ namespace Erasme.Json
 		{
 			foreach(KeyValuePair<string,JsonValue> pair in this)
 				array[arrayIndex++] = pair;
+		}
+
+		public override bool TryGetMember(GetMemberBinder binder, out object result)
+		{
+			if(hash.ContainsKey(binder.Name)) {
+				result = (object)hash[binder.Name];
+				return true;
+			}
+			else {
+				result = null;
+				return false;
+			}
+		}
+
+		public override bool TrySetMember(SetMemberBinder binder, object value)
+		{
+			hash[binder.Name] = (JsonValue)value;
+			return true;
 		}
 	}
 }
