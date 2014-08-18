@@ -1,3 +1,13 @@
+liberasme-http-cil (1.0.4) saucy; urgency=low (NOT YET RELEASED)
+
+  * Convert JsonValue in a DynamicObject
+  * Allow PathMapper to take static HttpContent
+  * Correct a bug in the KeepAlive preventing the server to handle
+  	the last request
+  * Allow control of the HTTP KeepAlive from the HttpServer
+
+ -- Daniel Lacroix <dlacroix@erasme.org>  Wed, 29 Jan 2014 17:10:00 +0100
+
 liberasme-http-cil (1.0.3) saucy; urgency=low
 
   * Add a "Data" hashtable to attach data to an HttpContext
