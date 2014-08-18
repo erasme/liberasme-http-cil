@@ -117,6 +117,10 @@ namespace Erasme.Http
 
 			if(!request.Headers.ContainsKey("host"))
 				request.Headers["host"] = hostname;
+			if(!request.Headers.ContainsKey("user-agent"))
+				request.Headers["user-agent"] = "liberasme-http-cil";
+			if(!request.Headers.ContainsKey("accept"))
+				request.Headers["accept"] = "*/*";
 			request.CopyTo(stream);
 			request.Sent = true;
 		}
