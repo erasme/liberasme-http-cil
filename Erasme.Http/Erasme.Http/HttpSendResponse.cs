@@ -172,7 +172,7 @@ namespace Erasme.Http
 				}
 				else {
 					context.Response.Headers["connection"] = "close";
-					context.KeepAliveCountdown = 0;
+					context.KeepAliveCountdown = -1;
 				}
 
 				// send the result

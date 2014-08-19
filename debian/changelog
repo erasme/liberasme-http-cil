@@ -4,6 +4,8 @@ liberasme-http-cil (1.0.4) saucy; urgency=low (NOT YET RELEASED)
   * Allow PathMapper to take static HttpContent
   * Correct a bug in the KeepAlive preventing the server to handle
   	the last request
+  * Correct a bug in the KeepAlive preventing server side connection
+    close
   * Allow control of the HTTP KeepAlive from the HttpServer
 
  -- Daniel Lacroix <dlacroix@erasme.org>  Wed, 29 Jan 2014 17:10:00 +0100
