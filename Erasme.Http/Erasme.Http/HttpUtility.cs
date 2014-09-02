@@ -327,17 +327,19 @@ namespace Erasme.Http
 				return null;
 			if((str.IndexOf('+') == -1) && (str.IndexOf('%') == -1))
 				return str;
-			StringBuilder sb = new StringBuilder();
+			byte[] bytes = new byte[str.Length];
+			int pos = 0;
 			for(int i = 0; i < str.Length; i++) {
 				char c = str[i];
 				if(c == '+')
-					sb.Append(' ');
+					bytes[pos] = (byte)' ';
 				else if(c == '%')
-					sb.Append((char)int.Parse(str[++i]+""+str[++i], NumberStyles.HexNumber, CultureInfo.CurrentCulture));
+					bytes[pos] = (byte)int.Parse(str[++i]+""+str[++i], NumberStyles.HexNumber, CultureInfo.CurrentCulture);
 				else
-					sb.Append(c);
+					bytes[pos] = (byte)c;
+				pos++;
 			}
-			return sb.ToString();
+			return Encoding.UTF8.GetString(bytes, 0, pos);
 		}
 
 		public static string UrlEncode(string str)
@@ -348,8 +350,12 @@ namespace Erasme.Http
 			foreach(char c in str) {
 				if(((c >= '0') && (c <= '9'))  || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')))
 					sb.Append(c);
-				else
-					sb.AppendFormat("%{0:x2}", (int)c);
+				else {
+					byte[] bytes = System.Text.Encoding.UTF8.GetBytes(new char[1]{ c });
+					foreach(byte b in bytes) {
+						sb.AppendFormat("%{0:X2}", b);
+					}
+				}
 			}
 			return sb.ToString();
 		}

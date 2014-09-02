@@ -7,6 +7,8 @@ liberasme-http-cil (1.0.4) saucy; urgency=low (NOT YET RELEASED)
   * Correct a bug in the KeepAlive preventing server side connection
     close
   * Allow control of the HTTP KeepAlive from the HttpServer
+  * Correct missing support for UTF-8 in UrlEncode and UrlDecode
+    preventing correct handling of special characters in query string
 
  -- Daniel Lacroix <dlacroix@erasme.org>  Wed, 29 Jan 2014 17:10:00 +0100
 
