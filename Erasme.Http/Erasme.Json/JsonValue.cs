@@ -190,7 +190,6 @@ namespace Erasme.Json
 			return new JsonPrimitive(value);
 		}
 
-
 		public virtual object Value {
 			get {
 				throw new NotSupportedException();
