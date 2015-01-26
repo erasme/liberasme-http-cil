@@ -129,6 +129,7 @@ namespace Erasme.Json
 			indent = 0;
 			this.sb = sb;
 			WriteValue(json);
+			this.sb.Append("\n");
 		}
 
 		public static string Enquote(string s) 
