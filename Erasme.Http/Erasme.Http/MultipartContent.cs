@@ -101,10 +101,11 @@ namespace Erasme.Http
 				HttpUtility.HeadersToStream(content.Headers, memStream);
 			}
 			totalLength += memStream.Length;
+
 			// all boundaries
-			totalLength += (boundary.Length+4)*list.Count;
+			totalLength += (boundary.Length+6)*list.Count;
 			// last boundary
-			totalLength += boundary.Length+8;
+			totalLength += boundary.Length+6;
 			length = totalLength;
 			return true;
 		}
