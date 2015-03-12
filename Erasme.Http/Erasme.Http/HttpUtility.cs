@@ -329,12 +329,16 @@ namespace Erasme.Http
 				return str;
 			byte[] bytes = new byte[str.Length];
 			int pos = 0;
+			int result;
 			for(int i = 0; i < str.Length; i++) {
 				char c = str[i];
 				if(c == '+')
 					bytes[pos] = (byte)' ';
-				else if(c == '%')
-					bytes[pos] = (byte)int.Parse(str[++i]+""+str[++i], NumberStyles.HexNumber, CultureInfo.CurrentCulture);
+				else if((c == '%') && (i < str.Length - 1) &&
+					int.TryParse(str[i + 1] + "" + str[i + 2], NumberStyles.HexNumber, CultureInfo.CurrentCulture, out result)) {
+					i += 2;
+					bytes[pos] = (byte)result;
+				}
 				else
 					bytes[pos] = (byte)c;
 				pos++;
