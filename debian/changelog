@@ -1,4 +1,4 @@
-liberasme-http-cil (1.0.4) saucy; urgency=low (NOT YET RELEASED)
+liberasme-http-cil (1.0.4) utopic; urgency=low (NOT YET RELEASED)
 
   * Convert JsonValue in a DynamicObject
   * Allow PathMapper to take static HttpContent
@@ -9,6 +9,11 @@ liberasme-http-cil (1.0.4) saucy; urgency=low (NOT YET RELEASED)
   * Allow control of the HTTP KeepAlive from the HttpServer
   * Correct missing support for UTF-8 in UrlEncode and UrlDecode
     preventing correct handling of special characters in query string
+  * Correct a bug in MultipartContent compute length preventing correct
+    multipart upload request with more than one part
+  * Add OnServerException to catch exceptions that might rises out
+    of an HttpContext
+  * Protect HttpUtility against invalid HTTP entity (%)
 
  -- Daniel Lacroix <dlacroix@erasme.org>  Wed, 29 Jan 2014 17:10:00 +0100
 
