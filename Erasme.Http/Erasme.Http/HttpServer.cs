@@ -7,7 +7,7 @@
 // Author(s):
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
-// Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2013-2015 Departement du Rhone - Metropole de Lyon
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -132,6 +132,9 @@ namespace Erasme.Http
 				try {
 					await client.ProcessAsync();
 				}
+				catch(Exception exception) {
+					OnServerException(exception);
+				}
 				finally {
 					lock(instanceLock) {
 						clients.Remove(clientNode);
@@ -148,6 +151,11 @@ namespace Erasme.Http
 					return new List<HttpServerClient>(clients);
 				}
 			}
+		}
+
+		protected virtual void OnServerException(Exception exception)
+		{
+			Console.WriteLine(exception.ToString());
 		}
 
 		protected internal virtual async Task ProcessRequestAsync(HttpContext context)
