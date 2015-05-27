@@ -430,7 +430,7 @@ namespace Erasme.Http
 			case ".svg": retval = "image/svg+xml"; break;
 			case ".svr": retval = "application/x-world"; break;
 			case ".swf": retval = "application/x-shockwave-flash"; break;
-			case "sxw":	retval = "application/vnd.sun.xml.writer"; break;
+			case ".sxw": retval = "application/vnd.sun.xml.writer"; break;
 			case ".t": retval = "application/x-troff"; break;
 			case ".talk": retval = "text/x-speech"; break;
 			case ".tar": retval = "application/x-tar"; break;
