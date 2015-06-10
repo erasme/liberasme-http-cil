@@ -5,7 +5,7 @@
 // Author(s):
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
-// Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2013 Departement du Rhone - 2015 Metropole de Lyon
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Authentication;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Erasme.Http
 {
@@ -43,6 +47,7 @@ namespace Erasme.Http
 		HttpServer server;
 		Socket socket;
 		NetStream stream;
+		Stream dataStream;
 		WebSocket webSocket = null;
 		DateTime startTime = DateTime.Now;
 		EndPoint remoteEndPoint;
@@ -68,12 +73,25 @@ namespace Erasme.Http
 			KeepAliveCountdown = 100;
 			KeepAliveTimeout = 10;
 
+			// handle HTTPS
+			if(server.ServerCertificate != null) {
+				SslStream sslStream = new SslStream(stream, true);
+				sslStream.ReadTimeout = 0;
+				sslStream.WriteTimeout = 0;
+				sslStream.AuthenticateAsServer(
+					server.ServerCertificate, false, SslProtocols.Tls, false);
+				dataStream = sslStream;
+			}
+			else {
+				dataStream = stream;
+			}
+
 			bufferContext = new BufferContext();
 			bufferContext.Offset = 0;
 			bufferContext.Count = 0;
 			bufferContext.ReadCounter = 0;
 			bufferContext.Buffer = new byte[4096];
-			bufferContext.Stream = stream;
+			bufferContext.Stream = dataStream;
 		}
 
 		public void Reset(Socket socket)
@@ -90,6 +108,18 @@ namespace Erasme.Http
 			KeepAliveTimeout = 10;
 			webSocket = null;
 			startTime = DateTime.Now;
+
+			// handle HTTPS
+			if(server.ServerCertificate != null) {
+				//dataStream.Close();
+				SslStream sslStream = new SslStream(stream, true);
+				sslStream.ReadTimeout = 0;
+				sslStream.WriteTimeout = 0;
+				sslStream.AuthenticateAsServer(
+					server.ServerCertificate, false, SslProtocols.Tls, false);
+				dataStream = sslStream;
+				bufferContext.Stream = dataStream;
+			}
 
 			bufferContext.Offset = 0;
 			bufferContext.Count = 0;
@@ -152,7 +182,7 @@ namespace Erasme.Http
 
 		internal Stream Stream {
 			get {
-				return stream;
+				return dataStream;
 			}
 		}
 

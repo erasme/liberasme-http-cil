@@ -34,11 +34,16 @@ using System.Reflection;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Erasme.Http
 {
 	public class HttpServer
 	{
+		// server certificate if the connexion is secure
+		X509Certificate serverCertificate = null;
+
 		Socket listener;
 		string name;
 		bool started = false;
@@ -48,8 +53,43 @@ namespace Erasme.Http
 		object instanceLock = new object();
 		LinkedList<HttpServerClient> clients = new LinkedList<HttpServerClient>();
 
-		public HttpServer(int port)
+		public HttpServer(int port): this(port, (X509Certificate)null)
 		{
+		}
+
+		public HttpServer(int port, string certificateFile, string certificatePassword)
+		{
+			X509Certificate certificate = null;
+			if(certificateFile != null)
+				certificate = new X509Certificate2(certificateFile, certificatePassword);
+
+			Init (port, certificate);
+		}
+
+		public HttpServer(int port, X509Certificate certificate)
+		{
+			Init(port, certificate);
+		}
+
+		public X509Certificate ServerCertificate {
+			get {
+				return serverCertificate;
+			}
+			set {
+				serverCertificate = value;
+			}
+		}
+
+		public void LoadServerCertificate(string file, string password)
+		{
+			if(file != null)
+				ServerCertificate = new X509Certificate2(file, password);
+		}
+
+		void Init(int port, X509Certificate certificate)
+		{
+			serverCertificate = certificate;
+
 			listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP);
 			IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, port);
 			listener.Bind(endPoint);
