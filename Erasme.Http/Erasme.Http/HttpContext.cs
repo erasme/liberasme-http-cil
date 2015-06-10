@@ -35,6 +35,8 @@ namespace Erasme.Http
 {
 	public class HttpContext
 	{
+		object instanceLock = new object();
+
 		internal HttpContext(HttpServerClient client, HttpServerRequest request)
 		{
 			Client = client;
@@ -59,6 +61,20 @@ namespace Erasme.Http
 			}
 			internal set {
 				Client.WebSocket = value;
+			}
+		}
+
+		WebSocketHandler webSocketHandler = null;
+		public WebSocketHandler WebSocketHandler { 
+			get {
+				lock(instanceLock) {
+					return webSocketHandler;
+				}
+			}
+			internal set {
+				lock(instanceLock) {
+					webSocketHandler = value;
+				}
 			}
 		}
 

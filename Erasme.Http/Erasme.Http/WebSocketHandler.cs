@@ -147,7 +147,7 @@ namespace Erasme.Http
 			Context = context;
 			WebSocket = await context.AcceptWebSocketAsync();
 			byte[] buffer = new byte[MaxIncomingMessageSize];
-
+			Context.WebSocketHandler = this;
 			Server.OnWebSocketHandlerOpen(this);
 
 			try {
