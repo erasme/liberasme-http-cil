@@ -11,8 +11,14 @@ namespace TestHttpClient
 				Console.WriteLine("Usage: TestHttpClient.exe [URL]");
 			}
 			else {
-				using(WebRequest request = new WebRequest(args[0], allowAutoRedirect: true)) {
-					HttpClientResponse response = request.GetResponse();
+				Uri uri = new Uri(args[0]);
+				using(HttpClient client = HttpClient.Create(uri.Host, uri.Port)) {
+					HttpClientRequest request = new HttpClientRequest();
+					request.Method = "GET";
+					request.Path = uri.PathAndQuery;
+					client.SendRequest(request);
+					HttpClientResponse response = client.GetResponse();
+
 					Console.WriteLine(response.Protocol + " " + response.Status);
 					foreach(string key in response.Headers.Keys) {
 						Console.WriteLine(key+": "+response.Headers[key]);
