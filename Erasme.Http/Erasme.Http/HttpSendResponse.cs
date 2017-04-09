@@ -6,6 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2015 Daniel Lacroix
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +86,11 @@ namespace Erasme.Http
 					context.Response.Headers["date"] = DateTime.Now.ToUniversalTime().ToString("r", System.Globalization.CultureInfo.InvariantCulture);
 				if(!context.Response.Headers.ContainsKey("content-type"))
 					context.Response.Headers["content-type"] = context.Response.Content.Headers.ContentType.ToString();
+				// if no cache-control is not defined, define a default one
+				// this will avoid problem with different default policies in browers
+				if(!context.Response.Headers.ContainsKey("cache-control"))
+					context.Response.Headers["cache-control"] = "no-cache, must-revalidate";
+
 				// decide if we are using GZip encoding or not
 				bool supportGzip = false;
 				if(context.Response.SupportGzip != null)
