@@ -5,7 +5,7 @@
 // Author(s):
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
-// Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2013-2017 Daniel LACROIX
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Erasme.Json;
 
 namespace Erasme.Http
 {
@@ -58,6 +59,22 @@ namespace Erasme.Http
 		/// Special HttpContent to use when there is no content
 		/// </summary>
 		public static readonly HttpContent Null = new EmptyContent();
+
+		/// <summary>
+		/// Implicit converter for String
+		/// </summary>
+		public static implicit operator HttpContent(string str)
+		{
+			return new StringContent(str);
+		}
+
+		/// <summary>
+		/// Implicit converter for JsonValue
+		/// </summary>
+		public static implicit operator HttpContent(JsonValue json)
+		{
+			return new JsonContent(json);
+		}
 	}
 }
 
