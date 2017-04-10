@@ -75,6 +75,14 @@ namespace Erasme.Http
 		{
 			return new JsonContent(json);
 		}
+
+		/// <summary>
+		/// Implicit converter for Stream
+		/// </summary>
+		public static implicit operator HttpContent(Stream json)
+		{
+			return new StreamContent(json);
+		}
 	}
 }
 
