@@ -86,6 +86,7 @@
     <Compile Include="Erasme.Http\WebRequest.cs" />
     <Compile Include="Erasme.Http\WWWAuthentication.cs" />
     <Compile Include="Erasme.Http\StaticContentHandler.cs" />
+    <Compile Include="Erasme.Http\HttpRouting.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
