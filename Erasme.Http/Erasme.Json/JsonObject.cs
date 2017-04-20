@@ -33,9 +33,9 @@ using System.Collections.Generic;
 
 namespace Erasme.Json
 {
-	public class JsonObject: JsonValue, IDictionary<string, JsonValue>
+	public class JsonObject: JsonValue, IDictionary<string, JsonValue>, IDictionary
 	{
-		Dictionary<string, JsonValue> hash = new Dictionary<string, JsonValue>();
+		readonly Dictionary<string, JsonValue> hash = new Dictionary<string, JsonValue>();
 
 		public JsonObject()
 		{
@@ -76,13 +76,36 @@ namespace Erasme.Json
 			}
 		}
 
+		object IDictionary.this[object key]
+		{
+			get {
+				return hash[(string)key];
+			}
+			set {
+				hash[(string)key] = (JsonValue)value;
+			}
+		}
+
 		public override ICollection<string> Keys {
 			get {
 				return hash.Keys;
 			}
 		}
 
+		ICollection IDictionary.Keys
+		{
+			get {
+				return ((IDictionary)hash).Keys;
+			}
+		}
+
 		public override ICollection<JsonValue> Values {
+			get {
+				return hash.Values;
+			}
+		}
+
+		ICollection IDictionary.Values {
 			get {
 				return hash.Values;
 			}
@@ -96,6 +119,11 @@ namespace Erasme.Json
 		public override bool ContainsKey(string key)
 		{
 			return hash.ContainsKey(key);
+		}
+
+		bool IDictionary.Contains(object key)
+		{
+			return hash.ContainsKey((string)key);
 		}
 
 		public bool Contains(KeyValuePair<string, JsonValue> pair)
@@ -113,6 +141,11 @@ namespace Erasme.Json
 			hash.Add(key, value);
 		}
 
+		void IDictionary.Add(object key, object value)
+		{
+			hash.Add((string)key, (JsonValue)value);
+		}
+
 		public void Add(KeyValuePair<string, JsonValue> pair)
 		{
 			hash.Add(pair.Key, pair.Value);
@@ -128,6 +161,11 @@ namespace Erasme.Json
 			return hash.Remove(pair.Key);
 		}
 
+		public void Remove(object key)
+		{
+			hash.Remove((string)key);
+		}
+
 		public bool TryGetValue(string key, out JsonValue value)
 		{
 			return hash.TryGetValue(key, out value);
@@ -137,6 +175,18 @@ namespace Erasme.Json
 			get {
 				return false;
 			}
+		}
+
+		bool ICollection.IsSynchronized
+		{
+			get {
+				return ((ICollection)hash).IsSynchronized;
+			}
+		}
+
+		IDictionaryEnumerator IDictionary.GetEnumerator()
+		{
+			return ((IDictionary)hash).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
@@ -153,7 +203,7 @@ namespace Erasme.Json
 		public override bool TryGetMember(GetMemberBinder binder, out object result)
 		{
 			if(hash.ContainsKey(binder.Name)) {
-				result = (object)hash[binder.Name];
+				result = hash[binder.Name];
 				return true;
 			}
 			else {
@@ -166,6 +216,32 @@ namespace Erasme.Json
 		{
 			hash[binder.Name] = (JsonValue)value;
 			return true;
+		}
+
+		bool IDictionary.IsFixedSize
+		{
+			get {
+				return false;
+			}
+		}
+
+		bool IDictionary.IsReadOnly
+		{
+			get {
+				return false;
+			}
+		}
+
+		object ICollection.SyncRoot
+		{
+			get {
+				return ((ICollection)hash).SyncRoot;
+			}
+		}
+
+		void ICollection.CopyTo(Array array, int index)
+		{
+			((ICollection)hash).CopyTo(array, index);
 		}
 	}
 }
