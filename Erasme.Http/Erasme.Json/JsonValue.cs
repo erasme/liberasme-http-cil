@@ -6,6 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2017 Daniel Lacroix
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +37,6 @@ namespace Erasme.Json
 {
 	public abstract class JsonValue: DynamicObject
 	{
-		public JsonValue()
-		{
-		}
-
 		public abstract JsonType JsonType { get; }
 
 		public virtual bool ContainsKey(string key)
@@ -73,13 +70,13 @@ namespace Erasme.Json
 
 		public virtual ICollection<string> Keys {
 			get {
-				return (ICollection<string>)new List<string>();
+				return new List<string>();
 			}
 		}
 
 		public virtual ICollection<JsonValue> Values {
 			get {
-				return (ICollection<JsonValue>)new List<JsonValue>();
+				return new List<JsonValue>();
 			}
 		}
 
@@ -124,7 +121,9 @@ namespace Erasme.Json
 
 		public static implicit operator string(JsonValue value)
 		{
-			if(value is JsonPrimitive)
+			if(value.JsonType == JsonType.String)
+				return (string)value.Value;
+			else if(value is JsonPrimitive)
 				return Convert.ToString(((JsonPrimitive)value).Value);
 			else
 				return null;
@@ -190,6 +189,22 @@ namespace Erasme.Json
 			return new JsonPrimitive(value);
 		}
 
+		public static implicit operator JsonValue(DateTime? value)
+		{
+			if (value == null)
+				return null;
+			else
+				return new JsonPrimitive((new DateTimeOffset((DateTime)value)).ToString("O"));
+		}
+
+		public static implicit operator DateTime?(JsonValue value)
+		{
+			if (value == null)
+				return null;
+			else
+				return DateTime.Parse((string)value.Value);
+		}
+
 		public virtual object Value {
 			get {
 				throw new NotSupportedException();
@@ -198,7 +213,7 @@ namespace Erasme.Json
 
 		public override string ToString()
 		{
-			JsonSerializer serializer = new JsonSerializer();
+			var serializer = new JsonSerializer();
 			return serializer.Serialize(this);
 		}
 
@@ -209,13 +224,13 @@ namespace Erasme.Json
 
 		public void Save(Stream stream)
 		{
-			byte[] buffer = Encoding.UTF8.GetBytes(ToString());
+			var buffer = Encoding.UTF8.GetBytes(ToString());
 			stream.Write(buffer, 0, buffer.Length);
 		}
 
 		public static JsonValue Parse(string jsonString)
 		{
-			JsonDeserializer deserializer = new JsonDeserializer();
+			var deserializer = new JsonDeserializer();
 			return deserializer.Deserialize(jsonString);
 		}
 
