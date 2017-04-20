@@ -7,6 +7,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2017 Daniel Lacroix
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +33,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Net.Sockets;
 
 namespace Erasme.Http
 {
@@ -64,10 +63,10 @@ namespace Erasme.Http
 		const string GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 		byte[] readBuffer = new byte[4096];
-		int readBufferOffset = 0;
-		int readBufferCount = 0;
+		int readBufferOffset;
+		int readBufferCount;
 
-		int readPos = 0;
+		int readPos;
 		bool opcodeDone = false;
 		Opcode opcode = Opcode.Text;
 		WebSocketMessageType messageType = WebSocketMessageType.Text;
@@ -76,7 +75,7 @@ namespace Erasme.Http
 			
 		bool payloadDone = false;
 		int payloadBytes = 1;
-		ulong payload = 0;
+		ulong payload;
 		ArraySegment<byte> buffer;
 			
 		bool maskingKeyDone = false;
@@ -120,9 +119,9 @@ namespace Erasme.Http
 		{
 			byte[] buffer;
 			if(statusDescription != null) {
-				byte[] statusBytes = Encoding.UTF8.GetBytes(statusDescription);
+				var statusBytes = Encoding.UTF8.GetBytes(statusDescription);
 				buffer = new byte[statusBytes.Length + 2];
-				System.Buffer.BlockCopy(statusBytes, 0, buffer, 2, statusBytes.Length);
+				Buffer.BlockCopy(statusBytes, 0, buffer, 2, statusBytes.Length);
 			}
 			else
 				buffer = new byte[2];
@@ -180,7 +179,7 @@ namespace Erasme.Http
 							readTask = null;
 						}
 					}
-					catch(Exception e) {
+					catch(Exception) {
 						Context.Client.Stream.Close();
 						State = WebSocketState.Closed;
 						return null;
@@ -223,7 +222,7 @@ namespace Erasme.Http
 							}
 							else {
 								payloadBytes = 1;
-								payload = (UInt64)(readBuffer[readBufferOffset] & 127);
+								payload = (ulong)(readBuffer[readBufferOffset] & 127);
 								payloadDone = true;
 								if(!mask && (payload == 0)) {
 									readPos = 0;

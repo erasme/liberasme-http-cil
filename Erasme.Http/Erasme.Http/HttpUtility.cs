@@ -6,6 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2017 Daniel LACROIX
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -492,12 +493,16 @@ namespace Erasme.Http
 		public static string QueryStringToString(Dictionary<string,string> queryString)
 		{
 			StringBuilder sb = new StringBuilder();
-			foreach(string key in  queryString.Keys) {
+			bool first = true;
+			foreach(string key in queryString.Keys) {
+				if (!first)
+					sb.Append("&");
 				sb.Append(UrlEncode(key));
 				if(queryString[key] != null) {
 					sb.Append("=");
 					sb.Append(UrlEncode(queryString[key]));
 				}
+				first = false;
 			}
 			return sb.ToString();
 		}

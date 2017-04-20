@@ -6,6 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2017 Metropole de Lyon
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -106,32 +107,38 @@ namespace Erasme.Http
 		/// </value>
 		public HttpContent Content { get; set; }
 
-		public void CopyTo(Stream stream)
+		public async Task CopyToAsync(Stream stream)
 		{
-			if(Content != null) {
+			if (Content != null)
+			{
 				long contentLength = 0;
 				Content.TryComputeLength(out contentLength);
 				Headers["content-length"] = contentLength.ToString();
-				if(!Headers.ContainsKey("content-type"))
+				if (!Headers.ContainsKey("content-type"))
 					Headers["content-type"] = Content.Headers.ContentType.ToString();
 			}
 
 			// compute the headers into memory
 			string fullPath = Path;
-			if(QueryString.Count > 0)
-				fullPath +="?"+HttpUtility.QueryStringToString(QueryString);
+			if (QueryString.Count > 0)
+				fullPath += "?" + HttpUtility.QueryStringToString(QueryString);
 			Stream memStream = new MemoryStream();
-			byte[] buffer = Encoding.UTF8.GetBytes(Method+" "+fullPath+" "+Protocol+"\r\n");
-			memStream.Write(buffer, 0, buffer.Length);
+			byte[] buffer = Encoding.UTF8.GetBytes(Method + " " + fullPath + " " + Protocol + "\r\n");
+			await memStream.WriteAsync(buffer, 0, buffer.Length);
 			HttpUtility.HeadersToStream(Headers, memStream);
 
 			// send the headers
 			memStream.Seek(0, SeekOrigin.Begin);
-			memStream.CopyTo(stream);
+			await memStream.CopyToAsync(stream);
 
 			// send the content
-			if(Content != null)
-				Content.CopyTo(stream);
+			if (Content != null)
+				await Content.CopyToAsync(stream);
+		}
+
+		public void CopyTo(Stream stream)
+		{
+			CopyToAsync(stream).Wait();
 		}
 	}
 }

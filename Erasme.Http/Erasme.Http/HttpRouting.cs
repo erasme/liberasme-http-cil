@@ -84,8 +84,8 @@ namespace Erasme.Http
 
 								if (paramType == "int")
 								{
-									long paramValue;
-									if (Int64.TryParse(p, out paramValue))
+									int paramValue;
+									if (Int32.TryParse(p, out paramValue))
 										value = paramValue;
 									else
 										break;

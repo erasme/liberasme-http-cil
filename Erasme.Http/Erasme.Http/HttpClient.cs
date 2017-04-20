@@ -36,6 +36,7 @@ using System.Security.Authentication;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Security.Cryptography.X509Certificates;
+using Erasme.Json;
 
 namespace Erasme.Http
 {
@@ -65,6 +66,12 @@ namespace Erasme.Http
 			return client;
 		}
 
+		public static async Task<HttpClient> CreateAsync(string hostname, int port = 80, bool secure = false)
+		{
+			HttpClient client = new HttpClient();
+			await client.OpenAsync(hostname, port, secure);
+			return client;
+		}
 		public static bool RemoteCertificateValidation(
 			object sender, X509Certificate certificate, X509Chain chain,
 			SslPolicyErrors sslPolicyErrors)
@@ -101,6 +108,28 @@ namespace Erasme.Http
 			bufferContext.Stream = stream;
 		}
 
+		async Task OpenAsync(string hostname, int port, bool secure)
+		{
+			this.hostname = hostname;
+			IPAddress[] addresses = await Dns.GetHostAddressesAsync(hostname);
+			if (addresses.Length == 0)
+				throw new Exception("Cant resolv '" + hostname + "'");
+			Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+			socket.Connect(addresses[0], port);
+			networkStream = new NetStream(socket, true);
+			if (secure)
+			{
+				sslStream = new SslStream(networkStream, true, RemoteCertificateValidation, LocalCertificateSelection);
+				await sslStream.AuthenticateAsClientAsync(hostname);
+				stream = sslStream;
+			}
+			else
+			{
+				stream = networkStream;
+			}
+			bufferContext.Stream = stream;
+		}
+
 		void CleanResponse()
 		{
 			// finish reading the previous response input stream if needed
@@ -110,35 +139,53 @@ namespace Erasme.Http
 			}
 		}
 
-		public void SendRequest(HttpClientRequest request)
+		async Task CleanResponseAsync()
 		{
 			// finish reading the previous response input stream if needed
-			CleanResponse();
+			if (lastResponse != null)
+			{
+				while (await lastResponse.InputStream.ReadAsync(null, 0, int.MaxValue) > 0) { }
+				lastResponse = null;
+			}
+		}
 
-			if(!request.Headers.ContainsKey("host"))
+		public void SendRequest(HttpClientRequest request)
+		{
+			SendRequestAsync(request).Wait();
+		}
+
+		public async Task SendRequestAsync(HttpClientRequest request)
+		{
+			// finish reading the previous response input stream if needed
+			await CleanResponseAsync();
+
+			if (!request.Headers.ContainsKey("host"))
 				request.Headers["host"] = hostname;
-			if(!request.Headers.ContainsKey("user-agent"))
+			if (!request.Headers.ContainsKey("user-agent"))
 				request.Headers["user-agent"] = "liberasme-http-cil";
-			if(!request.Headers.ContainsKey("accept"))
+			if (!request.Headers.ContainsKey("accept"))
 				request.Headers["accept"] = "*/*";
-			request.CopyTo(stream);
+			await request.CopyToAsync(stream);
 			request.Sent = true;
 		}
 
 		public HttpClientResponse GetResponse()
 		{
-			stringBuffer.SetLength(0);
-			Task<string> task = HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
+			var task = GetResponseAsync();
 			task.Wait();
-			string command = task.Result;
-			if(command == null)
+			return task.Result;
+		}
+
+		public async Task<HttpClientResponse> GetResponseAsync()
+		{
+			stringBuffer.SetLength(0);
+			string command = await HttpUtility.ReadLineAsync(bufferContext, stringBuffer);
+			if (command == null)
 				return null;
 			stringBuffer.SetLength(0);
 			// read the headers
 			HttpHeaders headers = new HttpHeaders();
-			Task<bool> taskBool = HttpUtility.ReadHeadersAsync(bufferContext, stringBuffer, headers);
-			taskBool.Wait();
-			if(!taskBool.Result)
+			if(!await HttpUtility.ReadHeadersAsync(bufferContext, stringBuffer, headers))
 				return null;
 			lastResponse = new HttpClientResponse(command, headers, bufferContext);
 			return lastResponse;
@@ -157,8 +204,13 @@ namespace Erasme.Http
 
 		public void Close()
 		{
-			CleanResponse();
-			if(sslStream != null)
+			CloseAsync().Wait();
+		}
+
+		public async Task CloseAsync()
+		{
+			await CleanResponseAsync();
+			if (sslStream != null)
 				sslStream.Close();
 			networkStream.Close();
 		}
@@ -169,6 +221,31 @@ namespace Erasme.Http
 				Close();
 				networkStream = null;
 			}
+		}
+
+		public static async Task<string> GetAsStringAsync(string url)
+		{
+			Uri uri = new Uri(url);
+			if ((uri.Scheme != "http") && (uri.Scheme != "https"))
+				throw new Exception("Invalid Scheme");
+			string res = null;
+			using (var client = HttpClient.Create(uri.Host, uri.Port, uri.Scheme == "https"))
+			{
+				var request = new HttpClientRequest();
+				request.Path = uri.PathAndQuery;
+				await client.SendRequestAsync(request);
+				var response = await client.GetResponseAsync();
+				if(response.StatusCode == 200)
+					res = await response.ReadAsStringAsync();
+				await client.CloseAsync();
+			}
+			return res;
+		}
+
+		public static async Task<JsonValue> GetAsJsonAsync(string url)
+		{
+			var stringRes = await GetAsStringAsync(url);
+			return (stringRes == null) ? null : JsonValue.Parse(stringRes);
 		}
 	}
 }
