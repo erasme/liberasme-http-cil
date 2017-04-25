@@ -296,7 +296,7 @@ namespace Erasme.Http
 				if(line == "")
 					break;
 				// continue the previous line
-				if(line.StartsWith(" ") || line.StartsWith("\t")) {
+				if((line.Length > 0) && ((line[0] == ' ') || (line[0] == '\t'))) {
 					if(content == null) {
 						throw new Exception("Invalid Mime header 2");
 					}
@@ -429,7 +429,10 @@ namespace Erasme.Http
 			stream.Write(Encoding.UTF8.GetBytes("\r\n"), 0, 2);
 		}
 
-		public static void ParseCommand(string command, out string method, out string fullPath, out string path, out Dictionary<string,string> queryString, out string protocol)
+		public static void ParseCommand(
+			string command, out string method, out string fullPath,
+			out string path, out Dictionary<string,string> queryString,
+			out Dictionary<string,List<string>> queryStringArray, out string protocol)
 		{
 			string[] tmp = command.Split(' ');
 			if(tmp.Length != 3)
@@ -438,7 +441,7 @@ namespace Erasme.Http
 			method = tmp[0];
 			// handle HTTP protocol
 			protocol = tmp[2];
-			if(!protocol.StartsWith("HTTP/"))
+			if(!protocol.StartsWith("HTTP/", StringComparison.InvariantCulture))
 				throw new Exception("Invalid HTTP header, protocol is not HTTP");
 			// handle path
 			fullPath = HttpUtility.UrlDecode(tmp[1]);
@@ -446,12 +449,25 @@ namespace Erasme.Http
 			path = HttpUtility.UrlDecode(tmp[0]);
 			// handle GET parameters
 			queryString = new Dictionary<string,string>();
+			queryStringArray = new Dictionary<string, List<string>>();
 			if(tmp.Length > 1) {
 				tmp = tmp[1].Split('&');
 				foreach(string keyval in tmp) {
-					string[] tmp2 = keyval.Split('=');
-					if(tmp2.Length == 2) {
-						queryString[HttpUtility.UrlDecode(tmp2[0])] = HttpUtility.UrlDecode(tmp2[1]);
+					var tmp2 = keyval.Split('=');
+					var key = HttpUtility.UrlDecode(tmp2[0]);
+					if (tmp2.Length == 1)
+						queryString[key] = null;
+					else if (tmp2.Length == 2)
+					{
+						if (key.EndsWith("[]", StringComparison.InvariantCulture))
+						{
+							key = key.Substring(0, key.Length - 2);
+							if (!queryStringArray.ContainsKey(key))
+								queryStringArray[key] = new List<string>();
+							queryStringArray[key].Add(HttpUtility.UrlDecode(tmp2[1]));
+						}
+						else
+							queryString[key] = HttpUtility.UrlDecode(tmp2[1]);
 					}
 				}
 			}
@@ -463,7 +479,7 @@ namespace Erasme.Http
 			if(pos == -1)
 				throw new Exception("Invalid HTTP status");
 			protocol = status.Substring(0, pos);
-			if(!protocol.StartsWith("HTTP/"))
+			if(!protocol.StartsWith("HTTP/", StringComparison.InvariantCulture))
 				throw new Exception("Invalid HTTP status, protocol is not valid");
 			status = status.Substring(pos + 1);
 			pos = status.IndexOf(' ');
