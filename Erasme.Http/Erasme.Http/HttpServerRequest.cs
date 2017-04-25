@@ -50,7 +50,8 @@ namespace Erasme.Http
 			this.startReadCounter = startReadCounter;
 			this.startWriteCounter = client.WriteCounter;
 
-			HttpUtility.ParseCommand(command, out method, out fullPath, out path, out queryString, out protocol);
+			HttpUtility.ParseCommand(command, out method, out fullPath, out path, 
+			                         out queryString, out queryStringArray, out protocol);
 			AbsolutePath = Path;
 
 			// handle HTTP headers
@@ -139,6 +140,21 @@ namespace Erasme.Http
 		public Dictionary<string,string> QueryString {
 			get {
 				return queryString;
+			}
+		}
+
+		Dictionary<string, List<string>> queryStringArray;
+		/// <summary>
+		/// Get the HTTP GET parameters
+		/// </summary>
+		/// <value>
+		/// The query string.
+		/// </value>
+		public Dictionary<string, List<string>> QueryStringArray
+		{
+			get
+			{
+				return queryStringArray;
 			}
 		}
 
