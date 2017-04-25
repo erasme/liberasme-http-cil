@@ -473,6 +473,35 @@ namespace Erasme.Http
 			}
 		}
 
+		public static void ParseFormUrlEncoded(
+			string data, out Dictionary<string, string> queryString,
+			out Dictionary<string, List<string>> queryStringArray)
+		{
+			// handle GET parameters
+			queryString = new Dictionary<string, string>();
+			queryStringArray = new Dictionary<string, List<string>>();
+			var	tmp = data.Split('&');
+			foreach (string keyval in tmp)
+			{
+				var tmp2 = keyval.Split('=');
+				var key = HttpUtility.UrlDecode(tmp2[0]);
+				if (tmp2.Length == 1)
+					queryString[key] = null;
+				else if (tmp2.Length == 2)
+				{
+					if (key.EndsWith("[]", StringComparison.InvariantCulture))
+					{
+						key = key.Substring(0, key.Length - 2);
+						if (!queryStringArray.ContainsKey(key))
+							queryStringArray[key] = new List<string>();
+						queryStringArray[key].Add(HttpUtility.UrlDecode(tmp2[1]));
+					}
+					else
+						queryString[key] = HttpUtility.UrlDecode(tmp2[1]);
+				}
+			}
+		}
+
 		public static void ParseStatus(string status, out string protocol, out int statusCode, out string statusDescription)
 		{
 			int pos = status.IndexOf(' ');
