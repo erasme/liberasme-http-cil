@@ -6,6 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013-2014 Departement du Rhone
+// Copyright (c) 2017 Daniel LACROIX
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,26 +35,25 @@ namespace Erasme.Http
 {
 	public class PathMapper: IHttpHandler, IDisposable
 	{
-		Dictionary<string,IHttpHandler> handlers = new Dictionary<string, IHttpHandler>();
+		readonly Dictionary<string,IHttpHandler> handlers = new Dictionary<string, IHttpHandler>();
 
-		public PathMapper()
-		{
-		}
-
-		public Task ProcessRequestAsync(HttpContext context)
+		public async Task ProcessRequestAsync(HttpContext context)
 		{
 			foreach(string basePath in handlers.Keys) {
 				if((context.Request.Path == basePath) || 
-				   (basePath.EndsWith("/") && context.Request.Path.StartsWith(basePath)) ||
-				   (!basePath.EndsWith("/") && context.Request.Path.StartsWith(basePath+"/"))) {
+				   (basePath.EndsWith("/", StringComparison.InvariantCulture) &&
+				    context.Request.Path.StartsWith(basePath, StringComparison.InvariantCulture)) ||
+				   (!basePath.EndsWith("/", StringComparison.InvariantCulture) &&
+				    context.Request.Path.StartsWith(basePath+"/", StringComparison.InvariantCulture))) {
 					// set the relative path
+					string oldPath = context.Request.Path;
 					context.Request.Path = context.Request.Path.Substring(basePath.Length);
 					if(context.Request.Path == "")
 						context.Request.Path = "/";
-					return handlers[basePath].ProcessRequestAsync(context);
+					await handlers[basePath].ProcessRequestAsync(context);
+					context.Request.Path = oldPath;
 				}
 			}
-			return Task.FromResult<Object>(null);
 		}
 
 		public void Add(string basePath, IHttpHandler handler)
@@ -69,7 +69,7 @@ namespace Erasme.Http
 		public void Dispose()
 		{
 			foreach(IHttpHandler handler in handlers.Values) {
-				IDisposable disposable = handler as IDisposable;
+				var disposable = handler as IDisposable;
 				if(disposable != null) {
 					try {
 						disposable.Dispose();
