@@ -41,6 +41,9 @@ namespace Erasme.Http
 
 		public Dictionary<string, TypeParser> Types = new Dictionary<string, TypeParser>();
 
+		public Route Before;
+		public RouteAsync BeforeAsync;
+
 		public Dictionary<string, Route> Get = new Dictionary<string, Route>();
 		public Dictionary<string, RouteAsync> GetAsync = new Dictionary<string, RouteAsync>();
 		public Dictionary<string, Route> Post = new Dictionary<string, Route>();
@@ -118,6 +121,14 @@ namespace Erasme.Http
 			return false;
 		}
 
+		async Task RunBeforeAsync(Hashtable parameters, HttpContext context)
+		{
+			if (Before != null)
+				Before(parameters, context);
+			if (BeforeAsync != null)
+				await BeforeAsync(parameters, context);
+		}
+
 		public async Task ProcessRequestAsync(HttpContext context)
 		{
 			Hashtable parameters;
@@ -125,30 +136,54 @@ namespace Erasme.Http
 			if (context.Request.Method == "GET")
 			{
 				if (FindMatchingKey(GetAsync.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					await GetAsync[key](parameters, context);
+				}
 				else if (FindMatchingKey(Get.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					Get[key](parameters, context);
+				}
 			}
 			else if (context.Request.Method == "POST")
 			{
 				if (FindMatchingKey(PostAsync.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					await PostAsync[key](parameters, context);
+				}
 				else if (FindMatchingKey(Post.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					Post[key](parameters, context);
+				}
 			}
 			else if (context.Request.Method == "PUT")
 			{
 				if (FindMatchingKey(PutAsync.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					await PutAsync[key](parameters, context);
+				}
 				else if (FindMatchingKey(Put.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					Put[key](parameters, context);
+				}
 			}
 			else if (context.Request.Method == "DELETE")
 			{
 				if (FindMatchingKey(DeleteAsync.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					await DeleteAsync[key](parameters, context);
+				}
 				else if (FindMatchingKey(Delete.Keys, context.Request.Path, out key, out parameters))
+				{
+					await RunBeforeAsync(parameters, context);
 					Delete[key](parameters, context);
+				}
 			}
 		}
 	}
