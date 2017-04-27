@@ -6,6 +6,8 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013-2014 Departement du Rhone
+// Copyright (c) 2017 Metropole de Lyon
+
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +28,6 @@
 // THE SOFTWARE.
 // 
 
-using System;
 using System.Dynamic;
 using System.Collections;
 using System.Collections.Generic;
@@ -35,10 +36,15 @@ namespace Erasme.Json
 {
 	public class JsonArray: JsonValue, IList<JsonValue>
 	{
-		List<JsonValue> list = new List<JsonValue>();
+		readonly List<JsonValue> list = new List<JsonValue>();
 
 		public JsonArray()
 		{
+		}
+
+		public JsonArray(IEnumerable<JsonValue> items)
+		{
+			AddRange(items);
 		}
 
 		public override JsonType JsonType {
@@ -64,7 +70,7 @@ namespace Erasme.Json
 
 		public override ICollection<JsonValue> Values {
 			get {
-				return (ICollection<JsonValue>)list;
+				return list;
 			}
 		}
 
@@ -101,12 +107,12 @@ namespace Erasme.Json
 
 		public IEnumerator<JsonValue> GetEnumerator()
 		{
-			return (IEnumerator<JsonValue>)list.GetEnumerator();
+			return list.GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
 		{
-			return (IEnumerator)list.GetEnumerator();
+			return list.GetEnumerator();
 		}
 
 		public int IndexOf(JsonValue item)
@@ -131,7 +137,7 @@ namespace Erasme.Json
 
 		public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
 		{
-			int index = (int)indexes[0];
+			var index = (int)indexes[0];
 			if(index < list.Count) {
 				list[index] = (JsonValue)value;
 				return true;
@@ -146,7 +152,7 @@ namespace Erasme.Json
 
 		public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
 		{
-			int index = (int)indexes[0];
+			var index = (int)indexes[0];
 			if(index < list.Count) {
 				result = list[index];
 				return true;
