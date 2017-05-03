@@ -35,22 +35,26 @@ namespace Erasme.Http
 {
 	public class PathMapper: IHttpHandler, IDisposable
 	{
-		readonly Dictionary<string,IHttpHandler> handlers = new Dictionary<string, IHttpHandler>();
+		readonly List<KeyValuePair<string, IHttpHandler>> handlers = new List<KeyValuePair<string, IHttpHandler>>();
 
 		public async Task ProcessRequestAsync(HttpContext context)
 		{
-			foreach(string basePath in handlers.Keys) {
-				if((context.Request.Path == basePath) || 
-				   (basePath.EndsWith("/", StringComparison.InvariantCulture) &&
-				    context.Request.Path.StartsWith(basePath, StringComparison.InvariantCulture)) ||
-				   (!basePath.EndsWith("/", StringComparison.InvariantCulture) &&
-				    context.Request.Path.StartsWith(basePath+"/", StringComparison.InvariantCulture))) {
+			foreach (var keyValue in handlers)				
+			{
+				if (context.Response.StatusCode != -1)
+					break;
+				if ((context.Request.Path == keyValue.Key) ||
+				   (keyValue.Key.EndsWith("/", StringComparison.InvariantCulture) &&
+					context.Request.Path.StartsWith(keyValue.Key, StringComparison.InvariantCulture)) ||
+				   (!keyValue.Key.EndsWith("/", StringComparison.InvariantCulture) &&
+					context.Request.Path.StartsWith(keyValue.Key + "/", StringComparison.InvariantCulture)))
+				{
 					// set the relative path
 					string oldPath = context.Request.Path;
-					context.Request.Path = context.Request.Path.Substring(basePath.Length);
-					if(context.Request.Path == "")
+					context.Request.Path = context.Request.Path.Substring(keyValue.Key.Length);
+					if (context.Request.Path == "")
 						context.Request.Path = "/";
-					await handlers[basePath].ProcessRequestAsync(context);
+					await keyValue.Value.ProcessRequestAsync(context);
 					context.Request.Path = oldPath;
 				}
 			}
@@ -58,18 +62,18 @@ namespace Erasme.Http
 
 		public void Add(string basePath, IHttpHandler handler)
 		{
-			handlers[basePath] = handler;
+			handlers.Add(new KeyValuePair<string,IHttpHandler>(basePath, handler));
 		}
 
 		public void Add(string basePath, HttpContent content)
 		{
-			handlers[basePath] = new StaticContentHandler(content);
+			handlers.Add(new KeyValuePair<string, IHttpHandler>(basePath, new StaticContentHandler(content)));
 		}
 
 		public void Dispose()
 		{
-			foreach(IHttpHandler handler in handlers.Values) {
-				var disposable = handler as IDisposable;
+			foreach(var keyValue in handlers) {
+				var disposable = keyValue.Value as IDisposable;
 				if(disposable != null) {
 					try {
 						disposable.Dispose();
