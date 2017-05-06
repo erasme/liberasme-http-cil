@@ -413,7 +413,12 @@ namespace Erasme.Http
 			}
 		}
 
-		public static void HeadersToStream(Dictionary<string,string> headers, Stream stream)
+		public static void HeadersToStream(Dictionary<string, string> headers, Stream stream)
+		{
+			HeadersToStream(headers, null, stream);
+		}
+
+		public static void HeadersToStream(Dictionary<string,string> headers, List<Cookie> cookies, Stream stream)
 		{
 			byte[] buffer;
 			foreach(string header in headers.Keys) {
@@ -426,6 +431,36 @@ namespace Erasme.Http
 				buffer = Encoding.UTF8.GetBytes("\r\n");
 				stream.Write(buffer, 0, 2);
 			}
+			if (cookies != null) {
+				foreach (var cookie in cookies) {
+					if (cookie.Name == null)
+						continue;
+					buffer = Encoding.UTF8.GetBytes("set-cookie: ");
+					stream.Write(buffer, 0, buffer.Length);
+					buffer = Encoding.UTF8.GetBytes(cookie.Name);
+					stream.Write(buffer, 0, buffer.Length);
+					buffer = Encoding.UTF8.GetBytes("=");
+					stream.Write(buffer, 0, buffer.Length);
+					if (cookie.Value != null) {
+						buffer = Encoding.UTF8.GetBytes(cookie.Value);
+						stream.Write(buffer, 0, buffer.Length);
+					}
+					buffer = Encoding.UTF8.GetBytes(";");
+					stream.Write(buffer, 0, buffer.Length);
+					if (cookie.Expires != null) {
+						buffer = Encoding.UTF8.GetBytes(" Expires=" + ((DateTime)cookie.Expires).ToString("R") + ";");
+						stream.Write(buffer, 0, buffer.Length);
+					}
+					if (cookie.Path != null)
+					{
+						buffer = Encoding.UTF8.GetBytes(" Path=" + cookie.Path + ";");
+						stream.Write(buffer, 0, buffer.Length);
+					}
+					buffer = Encoding.UTF8.GetBytes("\r\n");
+					stream.Write(buffer, 0, 2);
+				}
+			}
+
 			stream.Write(Encoding.UTF8.GetBytes("\r\n"), 0, 2);
 		}
 

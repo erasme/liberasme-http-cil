@@ -6,7 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
-// Copyright (c) 2015 Daniel Lacroix
+// Copyright (c) 2015-2017 Daniel Lacroix
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -187,7 +187,7 @@ namespace Erasme.Http
 				Stream memStream = new MemoryStream();
 				byte[] buffer = Encoding.UTF8.GetBytes("HTTP/1.1 "+context.Response.Status+"\r\n");
 				memStream.Write(buffer, 0, buffer.Length);
-				HttpUtility.HeadersToStream(context.Response.Headers, memStream);
+				HttpUtility.HeadersToStream(context.Response.Headers, context.Response.Cookies, memStream);
 
 				// send the headers
 				memStream.Seek(0, SeekOrigin.Begin);

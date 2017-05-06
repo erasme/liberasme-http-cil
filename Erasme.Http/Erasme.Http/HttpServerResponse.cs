@@ -7,6 +7,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2017 Daniel LACROIX
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,12 +33,21 @@ using System.Collections.Generic;
 
 namespace Erasme.Http
 {
+	public struct Cookie
+	{
+		public string Name;
+		public string Value;
+		public DateTime? Expires;
+		public string Path;
+		public string Domain;
+	}
+
 	public class HttpServerResponse
 	{
 		public HttpServerResponse()
 		{
 			Headers = new HttpHeaders();
-			Cookies = new Dictionary<string, string>();
+			Cookies = new List<Cookie>();
 			StatusCode = -1;
 			Status = null;
 			Content = null;
@@ -62,7 +72,7 @@ namespace Erasme.Http
 		/// <value>
 		/// The cookies.
 		/// </value>
-		public Dictionary<string,string> Cookies { get; internal set; }
+		public List<Cookie> Cookies { get; internal set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether this <see cref="Erasme.Http.HttpResponse"/> support gzip.
