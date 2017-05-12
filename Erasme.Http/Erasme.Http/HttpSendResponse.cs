@@ -31,7 +31,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.IO.Compression;
 
 namespace Erasme.Http
@@ -44,10 +43,6 @@ namespace Erasme.Http
 
 	public class HttpSendResponse: IHttpHandler
 	{
-		public HttpSendResponse()
-		{
-		}
-
 		public static async Task SendAsync(HttpContext context)
 		{
 			if(!context.Response.Sent && (context.WebSocket == null)) {
@@ -55,15 +50,19 @@ namespace Erasme.Http
 				while(await context.Request.InputStream.ReadAsync(null, 0, int.MaxValue) > 0) {}
 
 				// no content = 404 not found
-				if(context.Response.Content == null) {
-					if(context.Response.StatusCode == -1) {
-						if(context.Request.Method == "GET") {
+				if (context.Response.Content == null)
+				{
+					if (context.Response.StatusCode == -1)
+					{
+						if (context.Request.Method == "GET")
+						{
 							context.Response.StatusCode = 404;
-							StringContent defaultContent = new StringContent("File not found\r\n");
+							var defaultContent = new StringContent("File not found\r\n");
 							defaultContent.Headers.ContentType = "text/plain; utf-8";
 							context.Response.Content = defaultContent;
 						}
-						else {
+						else
+						{
 							context.Response.StatusCode = 405;
 							context.Response.Content = HttpContent.Null;
 						}
@@ -71,13 +70,17 @@ namespace Erasme.Http
 					else
 						context.Response.Content = HttpContent.Null;
 				}
+				// default HTTP status code when a content was set
+				else if (context.Response.StatusCode == -1)
+					context.Response.StatusCode = 200;
+				
 				// decide if we support HTTP ranges
 				bool supportRanges = context.Response.SupportRanges &&
 					// only support HTTP ranges with StreamContent
 					context.Response.Content is StreamContent;
 
 				bool hasBytesRanges = context.Request.Headers.ContainsKey("range") &&
-					context.Request.Headers["range"].ToLower().StartsWith("bytes=");
+					context.Request.Headers["range"].ToLower().StartsWith("bytes=", StringComparison.InvariantCulture);
 
 				// finish the headers
 				if(!context.Response.Headers.ContainsKey("server"))
@@ -85,7 +88,7 @@ namespace Erasme.Http
 				if(!context.Response.Headers.ContainsKey("date"))
 					context.Response.Headers["date"] = DateTime.Now.ToUniversalTime().ToString("r", System.Globalization.CultureInfo.InvariantCulture);
 				if(!context.Response.Headers.ContainsKey("content-type"))
-					context.Response.Headers["content-type"] = context.Response.Content.Headers.ContentType.ToString();
+					context.Response.Headers["content-type"] = context.Response.Content.Headers.ContentType;
 				// if no cache-control is not defined, define a default one
 				// this will avoid problem with different default policies in browers
 				if(!context.Response.Headers.ContainsKey("cache-control"))
@@ -98,13 +101,13 @@ namespace Erasme.Http
 				// auto decide to user GZip or not
 				else {
 					string contentType = context.Response.Headers["content-type"];
-					supportGzip = (contentType.StartsWith("text/plain") ||
-					               contentType.StartsWith("text/css") ||
-					               contentType.StartsWith("text/html") ||
-					               contentType.StartsWith("application/javascript") ||
-					               contentType.StartsWith("application/xml") ||
-					               contentType.StartsWith("application/json") ||
-					               contentType.StartsWith("image/svg+xml"));
+					supportGzip = (contentType.StartsWith("text/plain", StringComparison.InvariantCulture) ||
+					               contentType.StartsWith("text/css", StringComparison.InvariantCulture) ||
+					               contentType.StartsWith("text/html", StringComparison.InvariantCulture) ||
+					               contentType.StartsWith("application/javascript", StringComparison.InvariantCulture) ||
+					               contentType.StartsWith("application/xml", StringComparison.InvariantCulture) ||
+					               contentType.StartsWith("application/json", StringComparison.InvariantCulture) ||
+					               contentType.StartsWith("image/svg+xml", StringComparison.InvariantCulture));
 				}
 				// test if the server allow it
 				supportGzip &= context.Client.Server.AllowGZip;
@@ -185,7 +188,7 @@ namespace Erasme.Http
 
 				// compute the headers into memory
 				Stream memStream = new MemoryStream();
-				byte[] buffer = Encoding.UTF8.GetBytes("HTTP/1.1 "+context.Response.Status+"\r\n");
+				var buffer = Encoding.UTF8.GetBytes("HTTP/1.1 "+context.Response.Status+"\r\n");
 				memStream.Write(buffer, 0, buffer.Length);
 				HttpUtility.HeadersToStream(context.Response.Headers, context.Response.Cookies, memStream);
 
@@ -201,7 +204,7 @@ namespace Erasme.Http
 						gzippedStream.Close();
 					}
 					else if(ranges != null) {
-						StreamContent streamContent = context.Response.Content as StreamContent;
+						var streamContent = context.Response.Content as StreamContent;
 						byte[] copyBuffer = new byte[4096];
 						streamContent.Stream.Seek(ranges[0].Start, SeekOrigin.Begin);
 						long remains = ranges[0].Length;
@@ -241,29 +244,29 @@ namespace Erasme.Http
 
 		public static HttpRange[] ParseHttpRanges(string rangesString, long length, out long total)
 		{
-			if(!rangesString.ToLower().StartsWith("bytes="))
+			if(!rangesString.ToLower().StartsWith("bytes=", StringComparison.InvariantCulture))
 				throw new Exception("Only bytes range are supported");
 			rangesString = rangesString.Substring(6);
-			string[] rangesStr = rangesString.Split(',');
+			var rangesStr = rangesString.Split(',');
 
 			total = 0;
 			HttpRange[] ranges = new HttpRange[rangesStr.Length];
 			for(int i = 0; i < ranges.Length; i++) {
 				string rangeString = rangesStr[i];
-				if(rangeString.StartsWith("-")) {
-					long last = Convert.ToInt64(rangeString.Substring(1));
+				if(rangeString.StartsWith("-", StringComparison.InvariantCulture)) {
+					var last = Convert.ToInt64(rangeString.Substring(1));
 					ranges[i].Length = Math.Min(length, last);
 					ranges[i].Start = length - ranges[i].Length;
 				}
-				else if(rangeString.EndsWith("-")) {
-					long first = Convert.ToInt64(rangeString.Substring(0, rangeString.Length - 1));
+				else if(rangeString.EndsWith("-", StringComparison.InvariantCulture)) {
+					var first = Convert.ToInt64(rangeString.Substring(0, rangeString.Length - 1));
 					ranges[i].Start = Math.Min(length, first);
 					ranges[i].Length = length - ranges[i].Start;
 				}
 				else {
-					string[] parts = rangeString.Split('-');
-					long first = Convert.ToInt64(parts[0]);
-					long last = Convert.ToInt64(parts[1]);
+					var parts = rangeString.Split('-');
+					var first = Convert.ToInt64(parts[0]);
+					var last = Convert.ToInt64(parts[1]);
 					ranges[i].Start = Math.Min(length, first);
 					ranges[i].Length = Math.Min(length - first, last + 1 - first);
 				}
