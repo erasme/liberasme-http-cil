@@ -6,6 +6,7 @@
 //  Daniel Lacroix <dlacroix@erasme.org>
 // 
 // Copyright (c) 2013 Departement du Rhone
+// Copyright (c) 2013 Metropole de Lyon
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +33,7 @@ namespace Erasme.Json
 {
 	public class JsonPrimitive: JsonValue
 	{
-		object value;
+		readonly object value;
 
 		public JsonPrimitive(bool value)
 		{
@@ -81,6 +82,20 @@ namespace Erasme.Json
 			jsonType = JsonType.String;
 			this.value = value;
 		}
+
+		public JsonPrimitive(object value)
+		{
+			if (value is string)
+				jsonType = JsonType.String;
+			else if (value is bool)
+				jsonType = JsonType.Boolean;
+			else if ((value is byte) || (value is short) || (value is int) || (value is long) || (value is float) || (value is double))
+				jsonType = JsonType.Number;
+			else
+				throw new Exception("Unsupported type");
+			this.value = value;
+		}
+
 
 		JsonType jsonType;
 		public override JsonType JsonType {

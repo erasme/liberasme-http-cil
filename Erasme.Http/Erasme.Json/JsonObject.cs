@@ -48,6 +48,17 @@ namespace Erasme.Json
 			}
 		}
 
+		public JsonObject(IEnumerable<KeyValuePair<string, object>> values)
+		{
+			foreach (KeyValuePair<string, object> pair in values)
+			{
+				if (pair.Value is JsonValue)
+					hash.Add(pair.Key, (JsonValue)pair.Value);
+				else
+					hash.Add(pair.Key, new JsonPrimitive(pair.Value));
+			}
+		}
+
 		public JsonObject(KeyValuePair<string, JsonValue>[] values)
 		{
 			foreach(KeyValuePair<string, JsonValue> pair in values) {
