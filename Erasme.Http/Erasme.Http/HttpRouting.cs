@@ -129,7 +129,7 @@ namespace Erasme.Http
 				await BeforeAsync(parameters, context);
 		}
 
-		public async Task ProcessRequestAsync(HttpContext context)
+		public virtual async Task ProcessRequestAsync(HttpContext context)
 		{
 			Hashtable parameters;
 			string key;
