@@ -121,7 +121,7 @@ namespace Erasme.Http
 			return false;
 		}
 
-		async Task RunBeforeAsync(Hashtable parameters, HttpContext context)
+		protected async Task RunBeforeAsync(Hashtable parameters, HttpContext context)
 		{
 			if (Before != null)
 				Before(parameters, context);
