@@ -59,10 +59,24 @@ namespace Erasme.Http
 			bufferContext.Buffer = new byte[4096];
 		}
 
+		public static HttpClient Create(Uri url)
+		{
+			var client = new HttpClient();
+			client.Open(url.Host, url.Port, url.Scheme == "https");
+			return client;
+		}
+
 		public static HttpClient Create(string hostname, int port = 80, bool secure = false)
 		{
 			HttpClient client = new HttpClient();
 			client.Open(hostname, port, secure);
+			return client;
+		}
+
+		public static async Task<HttpClient> CreateAsync(Uri url)
+		{
+			var client = new HttpClient();
+			await client.OpenAsync(url.Host, url.Port, url.Scheme == "https");
 			return client;
 		}
 
@@ -72,6 +86,7 @@ namespace Erasme.Http
 			await client.OpenAsync(hostname, port, secure);
 			return client;
 		}
+
 		public static bool RemoteCertificateValidation(
 			object sender, X509Certificate certificate, X509Chain chain,
 			SslPolicyErrors sslPolicyErrors)
