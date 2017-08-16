@@ -32,6 +32,7 @@ using System.IO;
 using System.Text;
 using System.Dynamic;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace Erasme.Json
 {
@@ -259,32 +260,57 @@ namespace Erasme.Json
 			}
 		}
 
-		public T ToObject<T>() where T : new()
+		object ToObjectInternal(Type type)
 		{
-			var result = new T();
-			foreach (var field in typeof(T).GetFields())
+			object result = null;
+			if (this is JsonPrimitive)
 			{
-				if (!ContainsKey(field.Name))
-					continue;
-
-				var value = this[field.Name];
-				if (value is JsonPrimitive)
-					field.SetValue(result, Convert.ChangeType(value.Value, field.FieldType));
-				else if (value is JsonObject)
-					field.SetValue(result, GetType().GetMethod(nameof(ToObject)).MakeGenericMethod(field.FieldType).Invoke(value, new object[] { }));
+				if (type.IsEnum && JsonType == JsonType.String)
+					result = Enum.Parse(type, (string)Value);
+				else if (type == typeof(TimeSpan) && JsonType == JsonType.String)
+					result = TimeSpan.Parse((string)Value);
+				else
+					result = Convert.ChangeType(Value, type);
 			}
-			foreach (var prop in typeof(T).GetProperties())
+			else if (this is JsonObject)
 			{
-				if (!ContainsKey(prop.Name))
-					continue;
-
-				var value = this[prop.Name];
-				if (value is JsonPrimitive)
-					prop.SetValue(result, Convert.ChangeType(value.Value, prop.PropertyType));
-				else if (value is JsonObject)
-					prop.SetValue(result, GetType().GetMethod(nameof(ToObject)).MakeGenericMethod(prop.PropertyType).Invoke(value, new object[] { }));
+				result = Activator.CreateInstance(type);
+				foreach (var field in type.GetFields())
+				{
+					if (!ContainsKey(field.Name))
+						continue;
+					var value = this[field.Name];
+					field.SetValue(result, value.ToObjectInternal(field.FieldType));
+				}
+				foreach (var prop in type.GetProperties())
+				{
+					if (!ContainsKey(prop.Name))
+						continue;
+					var value = this[prop.Name];
+					prop.SetValue(result, value.ToObjectInternal(prop.PropertyType));
+				}
+			}
+			else if (this is JsonArray)
+			{
+				result = Activator.CreateInstance(type, Count);
+				if (type.IsArray)
+				{
+					var arrayItems = result as Array;
+					for (var i = 0; i < ((JsonArray)this).Count; i++)
+					{
+						var el = ((JsonArray)this)[i];
+						var elType = type.GetElementType();
+						var value = el.ToObjectInternal(elType);
+						arrayItems.SetValue(value, i);
+					}
+				}
 			}
 			return result;
+		}
+
+		public T ToObject<T>() where T : new()
+		{
+			return (T)ToObjectInternal(typeof(T));
 		}
 
 		public static T ParseToObject<T>(string jsonString) where T : new()
@@ -332,7 +358,9 @@ namespace Erasme.Json
 			else if (value is DateTime?)
 				result = (DateTime?)value;
 			else if (value is TimeSpan)
-				result = ((TimeSpan)value).TotalSeconds;
+				result = ((TimeSpan)value).ToString("c");
+			else if (value is Enum)
+				result = ((Enum)value).ToString();
 			else if (value as object == null)
 				result = null;
 			else if (value.GetType().IsClass)
@@ -340,16 +368,29 @@ namespace Erasme.Json
 			return result;
 		}
 
-		public static JsonObject ObjectToJson(object obj)
+		public static JsonValue ObjectToJson(object obj)
 		{
-			var result = new JsonObject();
-			foreach (var field in obj.GetType().GetFields())
-				result[field.Name] = NativeToJsonValue(field.GetValue(obj));
-			foreach (var prop in obj.GetType().GetProperties())
+			JsonValue result = null;
+			var enumerable = obj as IEnumerable;
+			if (enumerable != null)
 			{
-				if (prop.GetIndexParameters().Length > 0)
-					continue;
-				result[prop.Name] = NativeToJsonValue(prop.GetValue(obj));
+				var jsonArray = new JsonArray();
+				result = jsonArray;
+				foreach (var enumObj in enumerable)
+					jsonArray.Add(ObjectToJson(enumObj));
+			}
+			else
+			{
+				var jsonObject = new JsonObject();
+				result = jsonObject;
+				foreach (var field in obj.GetType().GetFields())
+					result[field.Name] = NativeToJsonValue(field.GetValue(obj));
+				foreach (var prop in obj.GetType().GetProperties())
+				{
+					if (prop.GetIndexParameters().Length > 0)
+						continue;
+					result[prop.Name] = NativeToJsonValue(prop.GetValue(obj));
+				}
 			}
 			return result;
 		}
