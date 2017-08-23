@@ -280,14 +280,14 @@ namespace Erasme.Json
 					if (!ContainsKey(field.Name))
 						continue;
 					var value = this[field.Name];
-					field.SetValue(result, value.ToObjectInternal(field.FieldType));
+					field.SetValue(result, value == null ? null : value.ToObjectInternal(field.FieldType));
 				}
 				foreach (var prop in type.GetProperties())
 				{
 					if (!ContainsKey(prop.Name))
 						continue;
 					var value = this[prop.Name];
-					prop.SetValue(result, value.ToObjectInternal(prop.PropertyType));
+					prop.SetValue(result, value == null ? null : value.ToObjectInternal(prop.PropertyType));
 				}
 			}
 			else if (this is JsonArray)
