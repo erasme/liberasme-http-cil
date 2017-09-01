@@ -534,7 +534,7 @@ namespace Erasme.Http
 					queryStringArray[key].Add(val);
 				}
 				else
-					queryString[key] = HttpUtility.UrlDecode(val);
+					queryString[key] = val;
 			}
 		}
 
