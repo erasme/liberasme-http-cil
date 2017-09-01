@@ -469,7 +469,7 @@ namespace Erasme.Http
 			out string path, out Dictionary<string,string> queryString,
 			out Dictionary<string,List<string>> queryStringArray, out string protocol)
 		{
-			string[] tmp = command.Split(' ');
+			var tmp = command.Split(' ');
 			if(tmp.Length != 3)
 				throw new Exception("Invalid HTTP header, command not valid");
 			// handle HTTP method
@@ -480,31 +480,24 @@ namespace Erasme.Http
 				throw new Exception("Invalid HTTP header, protocol is not HTTP");
 			// handle path
 			fullPath = HttpUtility.UrlDecode(tmp[1]);
-			tmp = tmp[1].Split('?');
-			path = HttpUtility.UrlDecode(tmp[0]);
-			// handle GET parameters
-			queryString = new Dictionary<string,string>();
+
+			queryString = new Dictionary<string, string>();
 			queryStringArray = new Dictionary<string, List<string>>();
-			if(tmp.Length > 1) {
-				tmp = tmp[1].Split('&');
-				foreach(string keyval in tmp) {
-					var tmp2 = keyval.Split('=');
-					var key = HttpUtility.UrlDecode(tmp2[0]);
-					if (tmp2.Length == 1)
-						queryString[key] = null;
-					else if (tmp2.Length == 2)
-					{
-						if (key.EndsWith("[]", StringComparison.InvariantCulture))
-						{
-							key = key.Substring(0, key.Length - 2);
-							if (!queryStringArray.ContainsKey(key))
-								queryStringArray[key] = new List<string>();
-							queryStringArray[key].Add(HttpUtility.UrlDecode(tmp2[1]));
-						}
-						else
-							queryString[key] = HttpUtility.UrlDecode(tmp2[1]);
-					}
-				}
+
+			var pos = tmp[1].IndexOf('?');
+			if (pos < 0)
+			{
+				path = HttpUtility.UrlDecode(tmp[1]);
+			}
+			else if (pos == 0)
+			{
+				path = "";
+			}
+			else
+			{
+				path = HttpUtility.UrlDecode(tmp[1].Substring(0, pos));
+				// handle GET parameters
+				ParseFormUrlEncoded(tmp[1].Substring(pos+1), out queryString, out queryStringArray);
 			}
 		}
 
@@ -516,24 +509,32 @@ namespace Erasme.Http
 			queryString = new Dictionary<string, string>();
 			queryStringArray = new Dictionary<string, List<string>>();
 			var	tmp = data.Split('&');
+
 			foreach (string keyval in tmp)
 			{
-				var tmp2 = keyval.Split('=');
-				var key = HttpUtility.UrlDecode(tmp2[0]);
-				if (tmp2.Length == 1)
-					queryString[key] = null;
-				else if (tmp2.Length == 2)
+				string key = null;
+				string val = "";
+				var pos = keyval.IndexOf('=');
+				if (pos < 0)
 				{
-					if (key.EndsWith("[]", StringComparison.InvariantCulture))
-					{
-						key = key.Substring(0, key.Length - 2);
-						if (!queryStringArray.ContainsKey(key))
-							queryStringArray[key] = new List<string>();
-						queryStringArray[key].Add(HttpUtility.UrlDecode(tmp2[1]));
-					}
-					else
-						queryString[key] = HttpUtility.UrlDecode(tmp2[1]);
+					key = HttpUtility.UrlDecode(keyval);
+					val = "";
 				}
+				else if (pos > 0)
+				{
+					key = HttpUtility.UrlDecode(keyval.Substring(0, pos));
+					val = HttpUtility.UrlDecode(keyval.Substring(pos + 1));
+				}
+
+				if (key.EndsWith("[]", StringComparison.InvariantCulture))
+				{
+					key = key.Substring(0, key.Length - 2);
+					if (!queryStringArray.ContainsKey(key))
+						queryStringArray[key] = new List<string>();
+					queryStringArray[key].Add(val);
+				}
+				else
+					queryString[key] = HttpUtility.UrlDecode(val);
 			}
 		}
 
