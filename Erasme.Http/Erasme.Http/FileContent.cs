@@ -189,6 +189,7 @@ namespace Erasme.Http
 			case ".htm": retval = "text/html"; break;
 			case ".html": retval = "text/html"; break;
 			case ".htmls": retval = "text/html"; break;
+			case ".xhtml": retval = "application/xhtml+xml"; break;
 			case ".htt": retval = "text/webviewhtml"; break;
 			case ".htx": retval = "text/html"; break;
 			case ".ice": retval = "x-conference/x-cooltalk"; break;
