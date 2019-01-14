@@ -32,199 +32,212 @@ using System.Globalization;
 
 namespace Erasme.Json
 {
-	internal class JsonDeserializer
-	{
-		string content;
-		int pos;
-		
-		public JsonDeserializer()
-		{
-		}
+    internal class JsonDeserializer
+    {
+        string content;
+        int pos;
 
-		string ReadString()
-		{
-			StringBuilder str = new StringBuilder();
-			
-			if(content[pos] != '"')
-				throw new Exception("Invalid JSON string");
-			pos++;
-			while(true) {
-				if(content[pos] == '\\') {
-					pos++;
-					if(content[pos] == '"')
-						str.Append('"');
-					else if(content[pos] == '\\')
-						str.Append('\\');
-					else if(content[pos] == '/')
-						str.Append('/');
-					else if(content[pos] == 'b')
-						str.Append('\b');
-					else if(content[pos] == 'f')
-						str.Append('\f');
-					else if(content[pos] == 'n')
-						str.Append('\n');
-					else if(content[pos] == 'r')
-						str.Append('\r');
-					else if(content[pos] == 't')
-						str.Append('\t');
-					else if(content[pos] == 'u') {
-						pos++;
-						string unicode = "";
-						unicode += content[pos++];
-						unicode += content[pos++];
-						unicode += content[pos++];
-						unicode += content[pos++];
-						str.Append(UInt32.Parse(unicode, NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo));
-					}
-					else
-						throw new Exception("Invalid JSON string");
-					pos++;
-				}
-				else if(content[pos] != '"')
-					str.Append(content[pos++]);
-				else
-					break;
-			}
-			pos++;
-			return str.ToString();
-		}
-		
-		double ReadNumber()
-		{
-			StringBuilder str = new StringBuilder();
-			while((content[pos] == '-') || (content[pos] == '+') ||
-			      (content[pos] == 'e') || (content[pos] == 'E') ||
-			      (content[pos] == '.') || (content[pos] == '0') ||
-			      (content[pos] == '1') || (content[pos] == '2') ||
-			      (content[pos] == '3') || (content[pos] == '4') ||
-			      (content[pos] == '5') || (content[pos] == '6') ||
-			      (content[pos] == '7') || (content[pos] == '8') ||
-			      (content[pos] == '9')) {
-				str.Append(content[pos]);
-				pos++;
-			}
-			return double.Parse(str.ToString(), System.Globalization.CultureInfo.InvariantCulture);
-		}
-				
-		JsonArray ReadArray()
-		{
-			if(content[pos] != '[')
-				throw new Exception("Invalid JSON array");
+        public JsonDeserializer()
+        {
+        }
 
-			JsonArray array = new JsonArray();
-			
-			pos++;
-			RemoveSpace();
+        string ReadString()
+        {
+            StringBuilder str = new StringBuilder();
 
-			if(content[pos] == ']') {
-				pos++;
-				return array;
-			}			
-			do {
-				array.Add(ReadValue());
-				RemoveSpace();
-				if(content[pos] == ']') {
-					pos++;
-					return array;
-				}
-				if(content[pos] != ',')
-					throw new Exception("Invalid JSON array");
-				pos++;
-				RemoveSpace();
-			} while(true);
-		}
-		
-		JsonValue ReadValue()
-		{
-			JsonValue val = null;
-			
-			if(content[pos] == '"')
-				val = new JsonPrimitive(ReadString());
-			else if(content[pos] == '[')
-				val = ReadArray();
-			else if(content[pos] == '{')
-				val = ReadObject();
-			else if((content[pos] == '-') || (content[pos] == '0') ||
-			        (content[pos] == '1') || (content[pos] == '2') ||
-			        (content[pos] == '3') || (content[pos] == '4') ||
-			        (content[pos] == '5') || (content[pos] == '6') ||
-			        (content[pos] == '7') || (content[pos] == '8') ||
-			        (content[pos] == '9'))
-				val = new JsonPrimitive(ReadNumber());
-			else if((content[pos] == 'n') && (content[pos+1] == 'u') &&
-			        (content[pos+2] == 'l') && (content[pos+3] == 'l')) {
-				val = null;
-				pos += 4;
-			}
-			else if((content[pos] == 't') && (content[pos+1] == 'r') &&
-			        (content[pos+2] == 'u') && (content[pos+3] == 'e')) {
-				val = new JsonPrimitive(true);
-				pos += 4;
-			}
-			else if((content[pos] == 'f') && (content[pos+1] == 'a') &&
-			        (content[pos+2] == 'l') && (content[pos+3] == 's') &&
-			        (content[pos+4] == 'e')) {
-				val = new JsonPrimitive(false);
-				pos += 5;
-			}
-			else
-				throw new Exception("Invalid JSON object");
-			return val;
-		}
+            if (content[pos] != '"')
+                throw new Exception("Invalid JSON string");
+            pos++;
+            while (true)
+            {
+                if (content[pos] == '\\')
+                {
+                    pos++;
+                    if (content[pos] == '"')
+                        str.Append('"');
+                    else if (content[pos] == '\\')
+                        str.Append('\\');
+                    else if (content[pos] == '/')
+                        str.Append('/');
+                    else if (content[pos] == 'b')
+                        str.Append('\b');
+                    else if (content[pos] == 'f')
+                        str.Append('\f');
+                    else if (content[pos] == 'n')
+                        str.Append('\n');
+                    else if (content[pos] == 'r')
+                        str.Append('\r');
+                    else if (content[pos] == 't')
+                        str.Append('\t');
+                    else if (content[pos] == 'u')
+                    {
+                        pos++;
+                        string unicode = "";
+                        unicode += content[pos++];
+                        unicode += content[pos++];
+                        unicode += content[pos++];
+                        unicode += content[pos];
+                        str.Append((char)UInt32.Parse(unicode, NumberStyles.HexNumber, NumberFormatInfo.InvariantInfo));
+                    }
+                    else
+                        throw new Exception("Invalid JSON string");
+                    pos++;
+                }
+                else if (content[pos] != '"')
+                    str.Append(content[pos++]);
+                else
+                    break;
+            }
+            pos++;
+            return str.ToString();
+        }
 
-		JsonObject ReadObject()
-		{
-			if(content[pos] != '{')
-				throw new Exception("Invalid JSON object");
-			
-			JsonObject obj = new JsonObject();
-			pos++;
-			RemoveSpace();
-			
-			if(content[pos] == '}') {
-				pos++;
-				return obj;
-			}
+        double ReadNumber()
+        {
+            StringBuilder str = new StringBuilder();
+            while ((content[pos] == '-') || (content[pos] == '+') ||
+                  (content[pos] == 'e') || (content[pos] == 'E') ||
+                  (content[pos] == '.') || (content[pos] == '0') ||
+                  (content[pos] == '1') || (content[pos] == '2') ||
+                  (content[pos] == '3') || (content[pos] == '4') ||
+                  (content[pos] == '5') || (content[pos] == '6') ||
+                  (content[pos] == '7') || (content[pos] == '8') ||
+                  (content[pos] == '9'))
+            {
+                str.Append(content[pos]);
+                pos++;
+            }
+            return double.Parse(str.ToString(), System.Globalization.CultureInfo.InvariantCulture);
+        }
 
-			bool stop = true;
-			do {
-				string key = ReadString();
-				
-				RemoveSpace();
-				if(content[pos] != ':')
-					throw new Exception("Invalid JSON object");
-				pos++;
-				RemoveSpace();
-				obj[key] = ReadValue();
-				RemoveSpace();
-				
-				if(content[pos] == ',') {
-					stop = false;
-					pos++;
-					RemoveSpace();
-				}
-				else
-					stop = true;
-			} while(!stop);
-			
-			if(content[pos] != '}')
-				throw new Exception("Invalid JSON object");
-			pos++;
-			return obj;
-		}
+        JsonArray ReadArray()
+        {
+            if (content[pos] != '[')
+                throw new Exception("Invalid JSON array");
 
-		void RemoveSpace()
-		{
-			while((content[pos] == ' ') || (content[pos] == '\t') || (content[pos] == '\n')  || (content[pos] == '\r')) { pos++; }
-		}
-		
-		public JsonValue Deserialize(string content)
-		{			
-			this.content = content;
-			pos = 0;
-			RemoveSpace();
-			return ReadValue();
-		}
-	}
+            JsonArray array = new JsonArray();
+
+            pos++;
+            RemoveSpace();
+
+            if (content[pos] == ']')
+            {
+                pos++;
+                return array;
+            }
+            do
+            {
+                array.Add(ReadValue());
+                RemoveSpace();
+                if (content[pos] == ']')
+                {
+                    pos++;
+                    return array;
+                }
+                if (content[pos] != ',')
+                    throw new Exception("Invalid JSON array");
+                pos++;
+                RemoveSpace();
+            } while (true);
+        }
+
+        JsonValue ReadValue()
+        {
+            JsonValue val = null;
+
+            if (content[pos] == '"')
+                val = new JsonPrimitive(ReadString());
+            else if (content[pos] == '[')
+                val = ReadArray();
+            else if (content[pos] == '{')
+                val = ReadObject();
+            else if ((content[pos] == '-') || (content[pos] == '0') ||
+                    (content[pos] == '1') || (content[pos] == '2') ||
+                    (content[pos] == '3') || (content[pos] == '4') ||
+                    (content[pos] == '5') || (content[pos] == '6') ||
+                    (content[pos] == '7') || (content[pos] == '8') ||
+                    (content[pos] == '9'))
+                val = new JsonPrimitive(ReadNumber());
+            else if ((content[pos] == 'n') && (content[pos + 1] == 'u') &&
+                    (content[pos + 2] == 'l') && (content[pos + 3] == 'l'))
+            {
+                val = null;
+                pos += 4;
+            }
+            else if ((content[pos] == 't') && (content[pos + 1] == 'r') &&
+                    (content[pos + 2] == 'u') && (content[pos + 3] == 'e'))
+            {
+                val = new JsonPrimitive(true);
+                pos += 4;
+            }
+            else if ((content[pos] == 'f') && (content[pos + 1] == 'a') &&
+                    (content[pos + 2] == 'l') && (content[pos + 3] == 's') &&
+                    (content[pos + 4] == 'e'))
+            {
+                val = new JsonPrimitive(false);
+                pos += 5;
+            }
+            else
+                throw new Exception("Invalid JSON object");
+            return val;
+        }
+
+        JsonObject ReadObject()
+        {
+            if (content[pos] != '{')
+                throw new Exception("Invalid JSON object");
+
+            JsonObject obj = new JsonObject();
+            pos++;
+            RemoveSpace();
+
+            if (content[pos] == '}')
+            {
+                pos++;
+                return obj;
+            }
+
+            bool stop = true;
+            do
+            {
+                string key = ReadString();
+
+                RemoveSpace();
+                if (content[pos] != ':')
+                    throw new Exception("Invalid JSON object");
+                pos++;
+                RemoveSpace();
+                obj[key] = ReadValue();
+                RemoveSpace();
+
+                if (content[pos] == ',')
+                {
+                    stop = false;
+                    pos++;
+                    RemoveSpace();
+                }
+                else
+                    stop = true;
+            } while (!stop);
+
+            if (content[pos] != '}')
+                throw new Exception("Invalid JSON object");
+            pos++;
+            return obj;
+        }
+
+        void RemoveSpace()
+        {
+            while ((content[pos] == ' ') || (content[pos] == '\t') || (content[pos] == '\n') || (content[pos] == '\r')) { pos++; }
+        }
+
+        public JsonValue Deserialize(string content)
+        {
+            this.content = content;
+            pos = 0;
+            RemoveSpace();
+            return ReadValue();
+        }
+    }
 }
 
