@@ -29,6 +29,7 @@
 //
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 
 namespace Erasme.Http
@@ -44,8 +45,11 @@ namespace Erasme.Http
 
 	public class HttpServerResponse
 	{
-		public HttpServerResponse()
+        HttpContext context;
+
+		public HttpServerResponse(HttpContext context)
 		{
+            this.context = context;
 			Headers = new HttpHeaders();
 			Cookies = new List<Cookie>();
 			StatusCode = -1;
@@ -133,6 +137,17 @@ namespace Erasme.Http
 		/// The content.
 		/// </value>
 		public HttpContent Content { get; set; }
+
+        ResponseOutputStream _outputStream;
+        public Stream OutputStream
+        {
+            get
+            {
+                if (_outputStream == null)
+                    _outputStream = new ResponseOutputStream(context);
+                return _outputStream;
+            }
+        }
 	}
 }
 

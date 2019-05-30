@@ -237,7 +237,54 @@ namespace Erasme.Http
 			}
 		}
 
-		public Task ProcessRequestAsync(HttpContext context)
+        public static async Task SendHeadersAsync(HttpContext context)
+        {
+            if (!context.Response.Sent && (context.WebSocket == null))
+            {
+                // finish reading request input stream if needed
+                while (await context.Request.InputStream.ReadAsync(null, 0, int.MaxValue) > 0) { }
+
+                // finish the headers
+                if (!context.Response.Headers.ContainsKey("server"))
+                    context.Response.Headers["server"] = context.Client.Server.ServerName;
+                if (!context.Response.Headers.ContainsKey("date"))
+                    context.Response.Headers["date"] = DateTime.Now.ToUniversalTime().ToString("r", System.Globalization.CultureInfo.InvariantCulture);
+                // if no cache-control is not defined, define a default one
+                // this will avoid problem with different default policies in browers
+                if (!context.Response.Headers.ContainsKey("cache-control"))
+                    context.Response.Headers["cache-control"] = "no-cache, must-revalidate";
+
+                // encode using HTTP chunks if content length is not known
+                context.Response.Headers["transfer-encoding"] = "chunked";
+
+                // handle connection header
+                if (context.Request.Headers.ContainsKey("connection") && (context.Request.Headers["connection"].ToLower() == "keep-alive") && (context.KeepAliveCountdown > 0))
+                {
+                    // handle Keep-Alive
+                    context.Response.Headers["connection"] = "keep-alive";
+                    context.Response.Headers["keep-alive"] = "timeout=" + context.KeepAliveTimeout + ",max=" + (context.KeepAliveCountdown--);
+                }
+                else
+                {
+                    context.Response.Headers["connection"] = "close";
+                    context.KeepAliveCountdown = -1;
+                }
+
+                // send the result
+
+                // compute the headers into memory
+                Stream memStream = new MemoryStream();
+                var buffer = Encoding.UTF8.GetBytes("HTTP/1.1 " + context.Response.Status + "\r\n");
+                memStream.Write(buffer, 0, buffer.Length);
+                HttpUtility.HeadersToStream(context.Response.Headers, context.Response.Cookies, memStream);
+
+                // send the headers
+                memStream.Seek(0, SeekOrigin.Begin);
+                await memStream.CopyToAsync(context.Client.Stream);
+            }
+        }
+
+        public Task ProcessRequestAsync(HttpContext context)
 		{
 			return SendAsync(context);
 		}

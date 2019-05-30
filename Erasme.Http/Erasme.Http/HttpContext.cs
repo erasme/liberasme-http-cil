@@ -42,7 +42,7 @@ namespace Erasme.Http
 			Client = client;
 			Request = request;
 			Data = new Hashtable();
-			Response = new HttpServerResponse();
+			Response = new HttpServerResponse(this);
 		}
 
 		public HttpServerClient Client { get; internal set; }
